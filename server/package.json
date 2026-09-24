@@ -1,0 +1,1 @@
+{"name":"my-life-dashboard-api","private":true,"type":"module","scripts":{"start":"node index.js"},"dependencies":{"cors":"^2.8.5","express":"^5.1.0","ical.js":"^2.2.1"}}
