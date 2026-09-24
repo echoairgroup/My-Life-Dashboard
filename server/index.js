@@ -20,10 +20,11 @@ const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 
-/*
- * Primary model
- */
-const GEMINI_MODEL = "gemini-3.8-flash";
+const ENV_GEMINI_MODEL =
+  process.env.GEMINI_MODEL || "gemini-3.8-flash";
+
+const ENV_GEMINI_FALLBACK_MODEL =
+  process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite";
 
 /*
  * Models exposed in the My Life AI model selector.
@@ -59,14 +60,22 @@ const GEMINI_MODELS = {
  * Do NOT use gemini-2.5-flash-lite here.
  * That model is no longer available to new users/projects.
  */
-const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
-
 const isAllowedGeminiModel = model =>
   typeof model === "string" &&
   Object.prototype.hasOwnProperty.call(GEMINI_MODELS, model);
 
+const GEMINI_MODEL = isAllowedGeminiModel(ENV_GEMINI_MODEL)
+  ? ENV_GEMINI_MODEL
+  : "gemini-3.8-flash";
+
+const GEMINI_FALLBACK_MODEL = isAllowedGeminiModel(
+  ENV_GEMINI_FALLBACK_MODEL
+)
+  ? ENV_GEMINI_FALLBACK_MODEL
+  : "gemini-3.1-flash-lite";
+
 const AI_BUILD =
-  "model-selector-2026-09-24";
+  "backend-hardening-2026-09-24";
 
 /* =========================================================
    GEMINI AI
@@ -77,27 +86,24 @@ async function callGemini(
   input,
   model = GEMINI_MODEL,
   image = null,
-  attempt = 0
+  attempt = 0,
+  fallbackUsed = false
 ) {
   if (!GEMINI_KEY) {
-    throw Error(
+    const error = new Error(
       "GEMINI_API_KEY ontbreekt in Render Environment"
     );
+    error.code = "AI_NOT_CONFIGURED";
+    error.status = 503;
+    throw error;
   }
 
   const prompt =
     (instructions ? instructions + "\n\n" : "") +
     String(input ?? "");
 
-  const parts = [
-    {
-      text: prompt
-    }
-  ];
+  const parts = [{ text: prompt }];
 
-  /*
-   * Optional image / vision support
-   */
   if (image?.data && image?.mimeType) {
     parts.push({
       inline_data: {
@@ -112,48 +118,56 @@ async function callGemini(
     encodeURIComponent(model) +
     ":generateContent";
 
-  const response = await fetch(url, {
-    method: "POST",
+  let response;
 
-    headers: {
-      "x-goog-api-key": GEMINI_KEY,
-      "Content-Type": "application/json"
-    },
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-goog-api-key": GEMINI_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts }]
+      })
+    });
+  } catch (networkError) {
+    const error = new Error(
+      "Kan Gemini niet bereiken: " + networkError.message
+    );
+    error.code = "AI_NETWORK_ERROR";
+    error.status = 502;
+    throw error;
+  }
 
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts
-        }
-      ]
-    })
-  });
-
-  const data = await response
-    .json()
-    .catch(() => ({}));
+  const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     const message =
       data?.error?.message ||
       "Gemini HTTP " + response.status;
 
+    const status = response.status;
+
     const overloaded =
-      response.status === 429 ||
-      response.status === 503 ||
+      status === 429 ||
+      status === 503 ||
       /high demand|overloaded|temporar|unavailable|capacity|resource exhausted/i.test(
         message
       );
 
-    /*
-     * One retry on the same model.
-     *
-     * This prevents infinite recursion while still
-     * giving temporary Google capacity issues a chance
-     * to recover.
-     */
-    if (overloaded && attempt === 0) {
+    const invalidModel =
+      status === 404 &&
+      /model|not found|unsupported/i.test(message);
+
+    const retryable =
+      overloaded ||
+      status === 408 ||
+      status === 500 ||
+      status === 502 ||
+      status === 504;
+
+    if (retryable && attempt === 0) {
       await new Promise(resolve =>
         setTimeout(resolve, 1200)
       );
@@ -163,28 +177,46 @@ async function callGemini(
         input,
         model,
         image,
-        1
+        1,
+        fallbackUsed
       );
     }
 
-    /*
-     * If the primary model is unavailable after the retry,
-     * use the fallback model.
-     */
     if (
+      (overloaded || invalidModel) &&
       model !== GEMINI_FALLBACK_MODEL &&
-      overloaded
+      !fallbackUsed
     ) {
       return callGemini(
         instructions,
         input,
         GEMINI_FALLBACK_MODEL,
         image,
-        0
+        0,
+        true
       );
     }
 
-    throw Error(message);
+    const error = new Error(message);
+    error.code =
+      overloaded
+        ? "AI_RATE_LIMIT"
+        : invalidModel
+          ? "AI_MODEL_ERROR"
+          : status === 401 || status === 403
+            ? "AI_AUTH_ERROR"
+            : status === 400
+              ? "AI_BAD_REQUEST"
+              : "AI_PROVIDER_ERROR";
+    error.status =
+      status === 401 || status === 403
+        ? 502
+        : status === 429
+          ? 429
+          : 502;
+    error.model = model;
+    error.providerStatus = status;
+    throw error;
   }
 
   const text =
@@ -192,9 +224,22 @@ async function callGemini(
       ?.map(part => part.text || "")
       .join("") || "";
 
+  if (!text.trim()) {
+    const error = new Error(
+      "Gemini gaf geen tekst terug (" +
+      (data?.candidates?.[0]?.finishReason || "UNKNOWN") +
+      ")."
+    );
+    error.code = "AI_EMPTY_RESPONSE";
+    error.status = 502;
+    error.model = model;
+    throw error;
+  }
+
   return {
-    text: text || "Geen antwoord ontvangen.",
-    model
+    text: text.trim(),
+    model,
+    fallbackUsed
   };
 }
 
@@ -885,6 +930,69 @@ async function simbrief() {
 }
 
 /* =========================================================
+   AI / API HELPERS
+========================================================= */
+
+const sendAiError = (res, error, fallbackMessage) => {
+  const status =
+    Number.isInteger(error?.status) ? error.status : 502;
+
+  return res.status(status).json({
+    error: error?.code || "AI_ERROR",
+    message:
+      error?.message ||
+      fallbackMessage ||
+      "Er ging iets mis met de AI.",
+    provider: "Gemini",
+    model: error?.model || null
+  });
+};
+
+const extractJsonObject = text => {
+  const cleaned = String(text || "")
+    .replace(/^\s*\`\`\`(?:json)?\s*/i, "")
+    .replace(/\s*\`\`\`\s*$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {}
+
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+
+  if (first === -1 || last <= first) {
+    throw new Error("Gemini gaf geen geldig JSON-object terug.");
+  }
+
+  return JSON.parse(cleaned.slice(first, last + 1));
+};
+
+const validateWidget = widget => {
+  if (!widget || typeof widget !== "object" || Array.isArray(widget)) {
+    throw new Error("Widget-output is geen geldig object.");
+  }
+
+  for (const key of ["name", "description", "html", "css", "js"]) {
+    if (typeof widget[key] !== "string") {
+      throw new Error("Widget-output mist het geldige veld: " + key);
+    }
+  }
+
+  if (widget.name.length > 120 || widget.description.length > 500) {
+    throw new Error("Widget-metadata is te lang.");
+  }
+
+  return {
+    name: widget.name.trim(),
+    description: widget.description.trim(),
+    html: widget.html,
+    css: widget.css,
+    js: widget.js
+  };
+};
+
+/* =========================================================
    HEALTH
 ========================================================= */
 
@@ -1019,10 +1127,11 @@ app.post(
           "Gemini"
       });
     } catch (error) {
-      res.status(502).json({
-        error:
-          error.message
-      });
+      sendAiError(
+        res,
+        error,
+        "De AI kon je bericht niet verwerken."
+      );
     }
   }
 );
@@ -1095,10 +1204,11 @@ app.post(
           "Gemini"
       });
     } catch (error) {
-      res.status(502).json({
-        error:
-          error.message
-      });
+      sendAiError(
+        res,
+        error,
+        "De AI kon de widget niet genereren."
+      );
     }
   }
 );
