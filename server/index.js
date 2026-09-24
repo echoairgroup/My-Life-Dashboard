@@ -12,9 +12,10 @@ const NEWSKY_ID = process.env.NEWSKY_AIRLINE_ID || "6671c567ed19d758f72965d4";
 const NEWSKY_KEY = process.env.NEWSKY_API_KEY || "";
 const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
 
-async function callGemini(instructions, input) {
+async function callGemini(instructions, input, model = GEMINI_MODEL) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
   const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");
   const response = await fetch(
@@ -34,7 +35,11 @@ async function callGemini(instructions, input) {
   );
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw Error(data?.error?.message || ("Gemini HTTP " + response.status));
+    const message = data?.error?.message || ("Gemini HTTP " + response.status);
+    if (model === GEMINI_MODEL && (response.status === 429 || response.status === 503 || /high demand|overloaded|temporar/i.test(message))) {
+      return callGemini(instructions, input, GEMINI_FALLBACK_MODEL);
+    }
+    throw Error(message);
   }
   const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
   return text || "Geen antwoord ontvangen.";
@@ -222,7 +227,8 @@ app.post("/api/ai/chat", async (req, res) => {
       "Help met planning, school, taken, doelen, Flight Sim en widgets. " +
       "Gebruik persoonlijke feiten uitsluitend uit de dashboardcontext en wees eerlijk als informatie ontbreekt. " +
       "Dashboardcontext: " + JSON.stringify(context);
-    res.json({ text: await callGemini(instructions, question), model: GEMINI_MODEL, provider: "Gemini" });
+    const text = await callGemini(instructions, question);
+    res.json({ text, model: GEMINI_MODEL, provider: "Gemini" });
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
