@@ -1,4 +1,4 @@
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+onst $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const KEY="my-life-dashboard-v1";
 const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
