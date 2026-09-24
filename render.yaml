@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: my-life-dashboard-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MAGISTER_FEED_URL
+        sync: false
+      - key: NEWSKY_AIRLINE_ID
+        value: 6671c567ed19d758f72965d4
+      - key: SIMBRIEF_USERNAME
+        sync: false
