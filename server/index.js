@@ -5,7 +5,7 @@ import ICAL from "ical.js";
 const app = express();
 const PORT = process.env.PORT || 10000;
 app.use(cors({ origin: true }));
-app.use(express.json({ limit: "256kb" }));
+app.use(express.json({ limit: "12mb" }));
 
 const MAGISTER = process.env.MAGISTER_FEED_URL || "";
 const NEWSKY_ID = process.env.NEWSKY_AIRLINE_ID || "6671c567ed19d758f72965d4";
