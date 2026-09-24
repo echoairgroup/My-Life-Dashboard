@@ -2,7 +2,7 @@
   const KEY = "my-life-dashboard-api-url";
   const apiBase = () => (localStorage.getItem(KEY) || window.MY_LIFE_API_URL || "").replace(/\/$/, "");
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
-  const state = { magister: [], newsky: [], simbrief: null };
+  const state = { magister: [], newsky: [], simbrief: null, newskyError: "", newskyDiagnostics: [] };
 
   async function get(path) {
     const base = apiBase();
@@ -34,7 +34,7 @@
       <div class="dashboard-grid">
         <article class="panel large"><div class="panel-head"><div><span class="panel-kicker">MAGISTER</span><h2>Vandaag</h2></div><span class="badge" id="magisterBadge">—</span></div><div id="magisterToday" class="task-list"></div></article>
         <article class="panel"><div class="panel-head"><div><span class="panel-kicker">SIMBRIEF</span><h2>Volgende vlucht</h2></div></div><div id="simbriefCard"></div></article>
-        <article class="panel large"><div class="panel-head"><div><span class="panel-kicker">NEWSKY</span><h2>Automatisch gelogde vluchten</h2></div><span class="badge" id="newskyBadge">0</span></div><div id="newskyList" class="task-list"></div></article>
+        <article class="panel large"><div class="panel-head"><div><span class="panel-kicker">NEWSKY</span><h2>Automatisch gelogde vluchten</h2></div><span class="badge" id="newskyBadge">0</span></div><div id="newskyError" class="muted" style="margin-bottom:12px"></div><div id="newskyList" class="task-list"></div></article>
         <article class="panel"><div class="panel-head"><div><span class="panel-kicker">SYSTEEM</span><h2>Verbinding</h2></div></div><div id="integrationStatus"></div><label style="display:block;margin-top:16px;font-size:10px;color:var(--muted)">API URL<input id="apiUrl" style="width:100%;margin-top:7px;background:var(--surface2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px" placeholder="https://jouw-api.onrender.com"></label><button class="ghost-btn" id="saveApi" style="margin-top:8px">Opslaan</button><p class="muted">Je Magister-link hoort alleen als geheime environment variable op de backend te staan.</p></article>
       </div>`;
     document.querySelector(".content").appendChild(v);
@@ -52,13 +52,15 @@
     if(f){const x=state.simbrief; f.innerHTML=x?`<div class="flight-preview"><strong style="font-size:22px">${esc(x.dep)} → ${esc(x.arr)}</strong><div class="task-meta">${esc(x.flightNumber||"SimBrief")} · ${esc(x.aircraft||"Aircraft")} · ${x.distance?Number(x.distance).toLocaleString("nl-NL")+" NM":"—"}</div></div>`:`<div class="empty-state"><strong>Geen SimBrief OFP</strong><span>Stel je SimBrief-account in op de backend.</span></div>`;}
     const n=document.querySelector("#newskyList");
     if(n){const xs=state.newsky.slice(-10).reverse();n.innerHTML=xs.length?xs.map(x=>`<div class="task"><div class="task-main"><div class="task-title">${esc(x.flightNumber||"Flight")} · ${esc(x.dep)} → ${esc(x.arr)}</div><div class="task-meta">${esc(x.aircraft||"Aircraft")} · ${x.distance?x.distance+" NM":"—"} ${x.rating?"· ★ "+x.rating:""}</div></div></div>`).join(""):`<div class="empty-state"><strong>Nog geen vluchten</strong><span>NewSky wordt automatisch ingelezen zodra de API actief is.</span></div>`;}
-    const nb=document.querySelector("#newskyBadge");if(nb)nb.textContent=state.newsky.length+" vluchten";
+    const nb=document.querySelector("#newskyBadge");if(nb)nb.textContent=state.newsky.length+" vluchten";const ne=document.querySelector("#newskyError");if(ne)ne.textContent=state.newskyError?("NewSky: "+state.newskyError):"";
     const input=document.querySelector("#apiUrl");if(input&&!input.value)input.value=apiBase();
     status();
   }
   async function status(){const box=document.querySelector("#integrationStatus");if(!box)return;if(!apiBase()){box.innerHTML='<span class="badge">API niet ingesteld</span>';return}try{const x=await get("/api/integrations/status");box.innerHTML=`<div class="integration-status"><span class="badge">${x.magister?"✓ Magister":"○ Magister"}</span><span class="badge">${x.newsky?"✓ NewSky":"○ NewSky"}</span><span class="badge">${x.simbrief?"✓ SimBrief":"○ SimBrief"}</span></div>`}catch{box.innerHTML='<span class="badge">API niet bereikbaar</span>';}}
   async function sync(){if(!apiBase()){show();toast("Vul eerst je API URL in");return}try{const x=await get("/api/dashboard/sync");state.magister=x.magister?.events||[];
 state.newsky=x.newsky?.flights||[];
+state.newskyError=x.newsky?.error||"";
+state.newskyDiagnostics=x.newsky?.diagnostics||[];
 state.simbrief=x.simbrief?.flight||null;
 state.calendarEvents=state.magister.map(e=>({id:"magister-"+e.id,title:e.title,start:e.start,end:e.end,location:e.location,source:"magister"}));
 const existing=new Map((state.flights||[]).map(f=>[String(f.id||f.newskyId||""),f]));
