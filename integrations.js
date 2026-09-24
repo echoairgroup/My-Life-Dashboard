@@ -69,6 +69,7 @@ for(const f of state.newsky){const id=String(f.id||"");if(!id||existing.has(id))
 dashboardState.flights=[...existing.values()];
 dashboardState.plannedFlight=state.simbrief||null;
 localStorage.setItem("my-life-dashboard-v1",JSON.stringify({...dashboardState,calendarEvents:dashboardState.calendarEvents||[]}));
+window.dispatchEvent(new Event("my-life-data-updated"));
 localStorage.setItem("my-life-dashboard-integrations-cache",JSON.stringify({magister:state.magister,newsky:state.newsky,simbrief:state.simbrief}));
 render();
 toast("Alles gesynchroniseerd")}catch(e){console.error(e);toast("Synchronisatie mislukt")}}
