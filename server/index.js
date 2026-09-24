@@ -27,7 +27,8 @@ const GEMINI_FALLBACK_MODEL = FREE_GEMINI_MODELS.has(configuredFallbackModel)
 
 async function callGemini(instructions, input, model = GEMINI_MODEL, image = null) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
-  const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");\n  const parts = [{ text: prompt }];\n  if (image?.data && image?.mimeType) parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
+  const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");
+  const parts = [{ text: prompt }];\n  if (image?.data && image?.mimeType) parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/" +
       encodeURIComponent(model) +
