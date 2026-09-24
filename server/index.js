@@ -232,12 +232,15 @@ app.get("/api/ai/status", (_, res) => res.json({
 app.post("/api/ai/chat", async (req, res) => {
   try {
     const context = req.body?.context || {};
-    const question = String(req.body?.message || "");\n    const image = req.body?.image && typeof req.body.image === "object" ? req.body.image : null;
+    const question = String(req.body?.message || "");
+    const image = req.body?.image && typeof req.body.image === "object" ? req.body.image : null;
+    const profile = context.aiProfile || {};
     const instructions =
       "Je bent de persoonlijke assistent van My Life Dashboard. " +
       "Help met planning, school, taken, doelen, Flight Sim en widgets. " +
       "Gebruik persoonlijke feiten uitsluitend uit de dashboardcontext en wees eerlijk als informatie ontbreekt. " +
-      "Respecteer ook deze persoonlijke AI-instellingen: " + JSON.stringify(profile) + ". " +\n      "Dashboardcontext: " + JSON.stringify(context);
+      "Respecteer ook deze persoonlijke AI-instellingen: " + JSON.stringify(profile) + ". " +
+      "Dashboardcontext: " + JSON.stringify(context);
     const text = await callGemini(instructions, question, GEMINI_MODEL, image);
     res.json({ text, model: GEMINI_MODEL, provider: "Gemini" });
   } catch (e) {
