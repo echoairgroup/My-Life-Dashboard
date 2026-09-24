@@ -45,8 +45,26 @@ function renderGoals(){
  $$("[data-delgoal]").forEach(b=>b.onclick=()=>{saveGoals(getGoals().filter(x=>x.id!==b.dataset.delgoal));renderGoals();renderDashboardExtras();toast("Doel verwijderd")});
 }
 function render(view){if(view==="today")renderToday();if(view==="agenda")renderAgenda();if(view==="homework")renderHomework();if(view==="goals")renderGoals()}
+function ensureAIPage(){
+ const content=document.querySelector(".content");if(!content||document.querySelector("#view-ai"))return;
+ const v=document.createElement("section");v.className="view";v.id="view-ai";
+ v.innerHTML='<div class="page-head"><div><p class="eyebrow">MY LIFE AI</p><h1>AI Workspace</h1><p>Vraag iets, laat je dashboard analyseren of ontwerp een eigen widget.</p></div></div><div class="ai-layout"><div class="panel ai-chat"><div class="panel-head"><div><span class="panel-kicker">ASSISTENT</span><h2>Waar kan ik je mee helpen?</h2></div></div><div id="aiMessages" class="ai-messages"><div class="ai-bubble assistant">Hoi! Ik kan straks helpen met je planning, school, Flight Sim en je dashboard. Je kunt ook vragen om een nieuwe widget te ontwerpen.</div></div><form id="aiForm" class="ai-form"><input id="aiInput" autocomplete="off" placeholder="Bijv. 'Wat moet ik vandaag doen?'"><button class="primary-btn">Stuur</button></form></div><div class="panel widget-builder"><div class="panel-head"><div><span class="panel-kicker">WIDGET LAB</span><h2>Maak een widget met AI</h2></div></div><textarea id="widgetPrompt" placeholder="Beschrijf je widget...&#10;&#10;Bijv. 'Maak een widget die mijn volgende les en lokaal toont.'"></textarea><button id="buildWidget" class="primary-btn">✦ Genereer widget</button><div id="widgetPreview" class="widget-preview"><span>Je gegenereerde widgets verschijnen hier.</span></div></div></div>';
+ content.appendChild(v);
+}
+function aiReply(q){
+ const l=q.toLowerCase(), events=typeof todayEvents==="function"?todayEvents():[], tasks=state.tasks||[];
+ if(l.includes("vandaag")||l.includes("doen")) return "Vandaag heb je "+events.length+" lessen en "+tasks.filter(t=>t.due===today()&&!t.done).length+" openstaande taken. Open **Vandaag** voor je complete tijdlijn.";
+ if(l.includes("huiswerk")) return "Je hebt vandaag "+tasks.filter(t=>t.due===today()&&(t.type==="school"||t.subject)&&!t.done).length+" openstaande huiswerkitems.";
+ if(l.includes("rooster")||l.includes("les")) return events.length?events.map(e=>time(e.start)+" — "+e.title+(e.location?" ("+e.location+")":"")).join("\n"):"Ik zie nog geen rooster. Synchroniseer Magister bij Integraties.";
+ return "Ik kan je vraag ontvangen. Voor echte AI-antwoorden moet de AI-provider nog aan de backend gekoppeld worden. De widget builder kan alvast je widget-idee opslaan en voorbereiden.";
+}
+function setupAI(){
+ ensureAIPage();addNav("ai","✦","AI");
+ const f=$("#aiForm");if(f)f.onsubmit=e=>{e.preventDefault();const input=$("#aiInput"),q=input.value.trim();if(!q)return;const box=$("#aiMessages");box.innerHTML+='<div class="ai-bubble user">'+esc(q)+'</div><div class="ai-bubble assistant">'+esc(aiReply(q))+'</div>';input.value="";box.scrollTop=box.scrollHeight};
+ const b=$("#buildWidget");if(b)b.onclick=()=>{const p=$("#widgetPrompt").value.trim(),box=$("#widgetPreview");if(!p)return;const widgets=JSON.parse(localStorage.getItem("my-life-ai-widgets-v1")||"[]");const w={id:Date.now().toString(36),prompt:p,created:new Date().toISOString()};widgets.push(w);localStorage.setItem("my-life-ai-widgets-v1",JSON.stringify(widgets));box.innerHTML='<strong>Widget concept opgeslagen</strong><span>'+esc(p)+'</span><small>Volgende stap: AI-generatie koppelen aan je backend.</small>';toast("Widget opgeslagen")};
+}
 function setup(){
- addNav("today","☀","Vandaag");addNav("agenda","▤","Agenda");addNav("homework","✎","Huiswerk");addNav("goals","◎","Doelen");
+ setupAI();addNav("today","☀","Vandaag");addNav("agenda","▤","Agenda");addNav("homework","✎","Huiswerk");addNav("goals","◎","Doelen");
  page("today",'<div class="page-head"><div><p class="eyebrow">VANDAAG</p><h1>Mijn dag</h1><p>Je rooster, taken en schoolwerk in één tijdlijn.</p></div><button class="primary-btn" data-newtask>＋ Taak toevoegen</button></div><div id="todayKpis" class="today-kpis"></div><div class="panel timeline-panel"><div class="panel-head"><div><span class="panel-kicker">TIJDLIJN</span><h2>Vandaag</h2></div></div><div id="todayTimeline" class="timeline"></div></div>');
  page("agenda",'<div class="page-head"><div><p class="eyebrow">PLANNEN</p><h1>Agenda</h1><p>De komende zeven dagen met lessen, taken en deadlines.</p></div><button class="primary-btn" data-newtask>＋ Nieuwe taak</button></div><div id="agendaList" class="agenda-list"></div>');
  page("homework",'<div class="page-head"><div><p class="eyebrow">SCHOOL</p><h1>Huiswerk</h1><p>Alles voor school, gesorteerd op wat er moet gebeuren.</p></div><button class="primary-btn" data-newtask>＋ Schoolwerk</button></div><div class="toolbar"><input id="homeworkSearch" class="search" placeholder="⌕ Zoek in huiswerk..."><select id="homeworkFilter"><option value="open">Open</option><option value="today">Vandaag</option><option value="all">Alles</option><option value="done">Afgerond</option></select></div><div id="homeworkList" class="homework-list"></div>');
