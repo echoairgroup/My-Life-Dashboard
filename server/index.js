@@ -1098,39 +1098,62 @@ app.post(
           ? requestedModel
           : GEMINI_MODEL;
 
-      const focus = profile.focus || {};
-      const enabledAreas = Object.entries(focus)
+      const rawFocus = profile.focus || {};
+      const legacyFocus = {
+        school: profile.school,
+        flights: profile.flight,
+        planning: profile.planning,
+        goals: profile.goals,
+        tasks: profile.tasks,
+        general: true
+      };
+      const mergedFocus = Object.keys(rawFocus).length
+        ? rawFocus
+        : legacyFocus;
+
+      const enabledAreas = Object.entries(mergedFocus)
         .filter(([, enabled]) => enabled !== false)
         .map(([key]) => key)
         .join(", ") || "algemeen";
 
+      const style = profile.tone || profile.style || "friendly";
       const toneRules = {
         friendly: "Vriendelijk, natuurlijk en behulpzaam.",
-        direct: "Kort, direct en zonder onnodige uitleg.",
+        direct: "Kort, direct en duidelijk. Geen opvulling.",
+        coach: "Coachend en motiverend, maar niet overdreven enthousiast.",
+        expert: "Deskundig, precies en duidelijk met voldoende uitleg.",
         detailed: "Uitgebreid en duidelijk, maar zonder onnodige herhaling.",
-        casual: "Casual en menselijk, alsof je normaal met de gebruiker praat."
+        casual: "Casual, menselijk en af en toe luchtig.",
+      };
+
+      const lengthRules = {
+        short: "Houd antwoorden compact en geef alleen wat nodig is.",
+        medium: "Geef een normale, overzichtelijke hoeveelheid uitleg.",
+        long: "Geef meer context wanneer dat nuttig is, maar blijf relevant."
       };
 
       const conversation = Array.isArray(context.recentConversation)
-        ? context.recentConversation.slice(-10)
+        ? context.recentConversation.slice(-12)
         : [];
-
       const instructions =
         "Je bent de persoonlijke AI-assistent van My Life Dashboard. " +
-        "De gebruiker wil vooral bruikbare antwoorden, geen standaardpraatje. " +
-        "Gebruik de dashboarddata als bron voor persoonlijke feiten en verzin nooit taken, lessen, vluchten, doelen, tijden of andere persoonlijke gegevens. " +
-        "Als informatie niet in de context staat, zeg dat duidelijk en vraag alleen om verduidelijking als dat echt nodig is. " +
-        "BELANGRIJK TEGEN HERHALING: herhaal geen begroeting, samenvatting, conclusie of advies dat al in de recente conversatie staat. " +
-        "Ga verder waar het gesprek gebleven is. Als de gebruiker een vervolgvraag stelt, beantwoord alleen het nieuwe deel. " +
-        "Noem persoonlijke informatie alleen wanneer die relevant is voor de vraag. " +
-        "Gebruik de huidige datum uit de context; neem relatieve woorden zoals vandaag/morgen serieus. " +
-        "Prioriteitsgebieden van de gebruiker: " + enabledAreas + ". " +
-        "Reageerstijl: " + (toneRules[profile.tone] || toneRules.friendly) + " " +
+        "Geef antwoorden die direct aansluiten op de vraag. " +
+        "De dashboardcontext is de bron van waarheid voor persoonlijke gegevens. " +
+        "Verzin nooit taken, lessen, vluchten, doelen, tijden, namen of andere persoonlijke feiten. " +
+        "Als gegevens ontbreken of mogelijk verouderd zijn, zeg dat duidelijk in plaats van te gokken. " +
+        "Gebruik recente integratiegegevens, wanneer aanwezig, voor Magister, NewSky en SimBrief. " +
+        "BELANGRIJK: begin een vervolgvraag niet opnieuw met dezelfde begroeting of uitleg. " +
+        "Herhaal geen advies, samenvatting, lijst of conclusie die al gegeven is tenzij de gebruiker er expliciet om vraagt. " +
+        "Bouw voort op het gesprek en behandel alleen het nieuwe deel van de vraag. " +
+        "Als het antwoord al eerder is gegeven, verwijs kort daarnaar en voeg alleen nieuwe informatie toe. " +
+        "Gebruik de datum uit de dashboardcontext en interpreteer vandaag, morgen en andere relatieve datums daarop. " +
+        "Respecteer de ingestelde focusgebieden: " + enabledAreas + ". " +
+        "Reageerstijl: " + (toneRules[style] || toneRules.friendly) + " " +
+        "Antwoordlengte: " + (lengthRules[profile.length] || lengthRules.medium) + " " +
         "Extra gebruikersinstructies: " + String(profile.custom || "geen") + ". " +
-        "Recente conversatie (gebruik dit om herhaling te voorkomen): " +
-        JSON.stringify(conversation) + ". " +
-        "Dashboardcontext (dit is de actuele bron van waarheid): " +
-        JSON.stringify(context);
+        "Naam van de gebruiker: " + String(profile.name || "onbekend") + ". " +
+        "Recente conversatie: " + JSON.stringify(conversation) + ". " +
+        "Dashboardcontext: " + JSON.stringify(context);
 
       const result =
         await callGemini(
