@@ -12,14 +12,24 @@ const NEWSKY_ID = process.env.NEWSKY_AIRLINE_ID || "6671c567ed19d758f72965d4";
 const NEWSKY_KEY = process.env.NEWSKY_API_KEY || "";
 const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODEL = "gemini-3.6-flash";
-const AI_BUILD = "gemini36-only-2026-09-24";
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
+const AI_BUILD = "gemini35-lite-with-25-lite-fallback-2026-09-24";
 
 async function callGemini(instructions, input, model = GEMINI_MODEL, image = null) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
+
   const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");
   const parts = [{ text: prompt }];
-  if (image?.data && image?.mimeType) parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
+  if (image?.data && image?.mimeType) {
+    parts.push({
+      inline_data: {
+        mime_type: image.mimeType,
+        data: image.data
+      }
+    });
+  }
+
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/" +
       encodeURIComponent(model) +
@@ -35,11 +45,28 @@ async function callGemini(instructions, input, model = GEMINI_MODEL, image = nul
       })
     }
   );
+
   const data = await response.json().catch(() => ({}));
+
   if (!response.ok) {
     const message = data?.error?.message || ("Gemini HTTP " + response.status);
+    const overloaded =
+      response.status === 429 ||
+      response.status === 503 ||
+      /high demand|overloaded|temporar|unavailable|capacity|resource exhausted/i.test(message);
+
+    if (model === GEMINI_MODEL && overloaded) {
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      try {
+        return await callGemini(instructions, input, GEMINI_MODEL, image);
+      } catch {
+        return callGemini(instructions, input, GEMINI_FALLBACK_MODEL, image);
+      }
+    }
+
     throw Error(message);
   }
+
   const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
   return { text: text || "Geen antwoord ontvangen.", model };
 }
@@ -217,7 +244,7 @@ app.get("/api/ai/status", (_, res) => res.json({
   configured: Boolean(GEMINI_KEY),
   provider: "Gemini",
   model: GEMINI_MODEL,
-  fallbackModel: null,
+  fallbackModel: GEMINI_FALLBACK_MODEL,
   build: AI_BUILD
 }));
 
