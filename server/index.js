@@ -12,18 +12,8 @@ const NEWSKY_ID = process.env.NEWSKY_AIRLINE_ID || "6671c567ed19d758f72965d4";
 const NEWSKY_KEY = process.env.NEWSKY_API_KEY || "";
 const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
-const configuredGeminiModel = process.env.GEMINI_MODEL || "gemini-3.6-flash";
-const configuredFallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.7-flash";
-
-// Keep the dashboard on the free-tier Flash models even if Render still has
-// an older paid model such as gemini-3.8-flash configured.
-const FREE_GEMINI_MODELS = new Set(["gemini-3.6-flash", "gemini-3.7-flash"]);
-const GEMINI_MODEL = FREE_GEMINI_MODELS.has(configuredGeminiModel)
-  ? configuredGeminiModel
-  : "gemini-3.7-flash";
-const GEMINI_FALLBACK_MODEL = FREE_GEMINI_MODELS.has(configuredFallbackModel)
-  ? configuredFallbackModel
-  : "gemini-3.6-flash";
+const GEMINI_MODEL = "gemini-3.6-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-3.7-flash";
 
 async function callGemini(instructions, input, model = GEMINI_MODEL, image = null) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
