@@ -23,7 +23,7 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 /*
  * Primary model
  */
-const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const GEMINI_MODEL = "gemini-3.8-flash";
 
 /*
  * Models exposed in the My Life AI model selector.
@@ -172,7 +172,7 @@ async function callGemini(
      * use the fallback model.
      */
     if (
-      model === GEMINI_MODEL &&
+      model !== GEMINI_FALLBACK_MODEL &&
       overloaded
     ) {
       return callGemini(
