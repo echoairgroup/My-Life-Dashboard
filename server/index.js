@@ -9,6 +9,15 @@ const MAGISTER=process.env.MAGISTER_FEED_URL||"";
 const NEWSKY_ID=process.env.NEWSKY_AIRLINE_ID||"6671c567ed19d758f72965d4";
 const NEWSKY_KEY=process.env.NEWSKY_API_KEY||"";
 const SIMBRIEF=process.env.SIMBRIEF_USERNAME||"";
+const OPENAI_KEY=process.env.OPENAI_API_KEY||"";
+const OPENAI_MODEL=process.env.OPENAI_MODEL||"gpt-5.6-luna";
+async function callOpenAI(instructions,input){
+ if(!OPENAI_KEY)throw Error("OPENAI_API_KEY ontbreekt in Render Environment");
+ const r=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+OPENAI_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:OPENAI_MODEL,instructions,input})});
+ const d=await r.json(); if(!r.ok)throw Error(d?.error?.message||("OpenAI HTTP "+r.status));
+ return d.output_text||"Geen antwoord ontvangen.";
+}
+
 let cache={m:{at:0,data:[]},n:{at:0,data:[]},s:{at:0,data:null}};
 const fresh=x=>x.at&&Date.now()-x.at<120000;
 const pick=(o,...ks)=>{for(const k of ks){const v=k.split(".").reduce((a,b)=>a?.[b],o);if(v!==undefined&&v!==null&&v!=="")return v}return""};
@@ -80,7 +89,22 @@ async function simbrief(){
  const f={id:String(pick(g,"static_id","flight_number")||Date.now()),flightNumber:String(pick(g,"flight_number")||""),dep:String(pick(o,"icao_code","icao")||""),arr:String(pick(a,"icao_code","icao")||""),aircraft:String(pick(ac,"icaocode","icao","name")||""),route:String(pick(g,"route")||""),cruiseAltitude:String(pick(g,"initial_altitude")||""),distance:asNumber(pick(g,"air_distance","distance")||0),duration:durationMinutes(pick(t,"est_time_enroute","sched_time")||0),departure:pick(t,"sched_out","est_out")||null,callsign:String(pick(at,"callsign")||""),source:"simbrief"};
  cache.s={at:Date.now(),data:f};return{configured:true,flight:f};
 }
-app.get("/health",(_,res)=>res.json({ok:true,service:"my-life-dashboard-api"}));
+app.get("/health",(_,res)=>res.json({ok:true,service:"my-life-dashboard-api",ai:Boolean(OPENAI_KEY)}));
+app.get("/api/ai/status",(_,res)=>res.json({configured:Boolean(OPENAI_KEY),model:OPENAI_MODEL}));
+app.use(express.json({limit:"256kb"}));
+app.post("/api/ai/chat",async(req,res)=>{try{
+ const c=req.body?.context||{}; const q=String(req.body?.message||"");
+ const instructions="Je bent de persoonlijke assistent van My Life Dashboard. Help met planning, school, taken, doelen, Flight Sim en widgets. Gebruik persoonlijke feiten alleen uit deze dashboardcontext en wees eerlijk als informatie ontbreekt. Dashboardcontext: "+JSON.stringify(c);
+ res.json({text:await callOpenAI(instructions,q),model:OPENAI_MODEL});
+}catch(e){res.status(502).json({error:e.message})}});
+app.post("/api/ai/widget",async(req,res)=>{try{
+ const q=String(req.body?.prompt||"");
+ const instructions="Ontwerp een veilige, zelfstandige HTML widget voor een persoonlijk dashboard. Antwoord uitsluitend met JSON met de velden name, description, html, css en js. Geen externe scripts, geen netwerkrequests en geen browseracties die data verwijderen. Gebruik window.MyLifeWidgetData voor dashboardgegevens.";
+ const raw=await callOpenAI(instructions,q);
+ const clean=raw.replace(/^\`\`\`json\s*/,"").replace(/\s*\`\`\`$/,"").trim();
+ res.json({widget:JSON.parse(clean),model:OPENAI_MODEL});
+}catch(e){res.status(502).json({error:e.message})}});
+
 app.get("/api/integrations/status",(_,res)=>res.json({magister:Boolean(MAGISTER),newsky:Boolean(NEWSKY_KEY),simbrief:Boolean(SIMBRIEF)}));
 app.get("/api/magister/events",async(_,res)=>{try{res.json(await magister())}catch(e){res.status(502).json({configured:Boolean(MAGISTER),events:[],error:e.message})}});
 app.get("/api/newsky/flights",async(_,res)=>{try{res.json(await newsky())}catch(e){res.status(502).json({configured:Boolean(NEWSKY_KEY),flights:[],error:e.message,diagnostics:e.diagnostics||[]})}});
