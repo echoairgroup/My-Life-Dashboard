@@ -25,9 +25,9 @@ const GEMINI_FALLBACK_MODEL = FREE_GEMINI_MODELS.has(configuredFallbackModel)
   ? configuredFallbackModel
   : "gemini-3.6-flash";
 
-async function callGemini(instructions, input, model = GEMINI_MODEL) {
+async function callGemini(instructions, input, model = GEMINI_MODEL, image = null) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
-  const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");
+  const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");\n  const parts = [{ text: prompt }];\n  if (image?.data && image?.mimeType) parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/" +
       encodeURIComponent(model) +
@@ -39,7 +39,7 @@ async function callGemini(instructions, input, model = GEMINI_MODEL) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }]
+        contents: [{ role: "user", parts }]
       })
     }
   );
@@ -48,7 +48,7 @@ async function callGemini(instructions, input, model = GEMINI_MODEL) {
     const message = data?.error?.message || ("Gemini HTTP " + response.status);
     if (model === GEMINI_MODEL && model !== GEMINI_FALLBACK_MODEL &&
         (response.status === 429 || response.status === 503 || /high demand|overloaded|temporar/i.test(message))) {
-      return callGemini(instructions, input, GEMINI_FALLBACK_MODEL);
+      return callGemini(instructions, input, GEMINI_FALLBACK_MODEL, image);
     }
     throw Error(message);
   }
@@ -232,13 +232,13 @@ app.get("/api/ai/status", (_, res) => res.json({
 app.post("/api/ai/chat", async (req, res) => {
   try {
     const context = req.body?.context || {};
-    const question = String(req.body?.message || "");
+    const question = String(req.body?.message || "");\n    const image = req.body?.image && typeof req.body.image === "object" ? req.body.image : null;
     const instructions =
       "Je bent de persoonlijke assistent van My Life Dashboard. " +
       "Help met planning, school, taken, doelen, Flight Sim en widgets. " +
       "Gebruik persoonlijke feiten uitsluitend uit de dashboardcontext en wees eerlijk als informatie ontbreekt. " +
-      "Dashboardcontext: " + JSON.stringify(context);
-    const text = await callGemini(instructions, question);
+      "Respecteer ook deze persoonlijke AI-instellingen: " + JSON.stringify(profile) + ". " +\n      "Dashboardcontext: " + JSON.stringify(context);
+    const text = await callGemini(instructions, question, GEMINI_MODEL, image);
     res.json({ text, model: GEMINI_MODEL, provider: "Gemini" });
   } catch (e) {
     res.status(502).json({ error: e.message });
