@@ -1098,14 +1098,38 @@ app.post(
           ? requestedModel
           : GEMINI_MODEL;
 
+      const focus = profile.focus || {};
+      const enabledAreas = Object.entries(focus)
+        .filter(([, enabled]) => enabled !== false)
+        .map(([key]) => key)
+        .join(", ") || "algemeen";
+
+      const toneRules = {
+        friendly: "Vriendelijk, natuurlijk en behulpzaam.",
+        direct: "Kort, direct en zonder onnodige uitleg.",
+        detailed: "Uitgebreid en duidelijk, maar zonder onnodige herhaling.",
+        casual: "Casual en menselijk, alsof je normaal met de gebruiker praat."
+      };
+
+      const conversation = Array.isArray(context.recentConversation)
+        ? context.recentConversation.slice(-10)
+        : [];
+
       const instructions =
-        "Je bent de persoonlijke assistent van My Life Dashboard. " +
-        "Help met planning, school, taken, doelen, Flight Sim en widgets. " +
-        "Gebruik persoonlijke feiten uitsluitend uit de dashboardcontext en wees eerlijk als informatie ontbreekt. " +
-        "Respecteer ook deze persoonlijke AI-instellingen: " +
-        JSON.stringify(profile) +
-        ". " +
-        "Dashboardcontext: " +
+        "Je bent de persoonlijke AI-assistent van My Life Dashboard. " +
+        "De gebruiker wil vooral bruikbare antwoorden, geen standaardpraatje. " +
+        "Gebruik de dashboarddata als bron voor persoonlijke feiten en verzin nooit taken, lessen, vluchten, doelen, tijden of andere persoonlijke gegevens. " +
+        "Als informatie niet in de context staat, zeg dat duidelijk en vraag alleen om verduidelijking als dat echt nodig is. " +
+        "BELANGRIJK TEGEN HERHALING: herhaal geen begroeting, samenvatting, conclusie of advies dat al in de recente conversatie staat. " +
+        "Ga verder waar het gesprek gebleven is. Als de gebruiker een vervolgvraag stelt, beantwoord alleen het nieuwe deel. " +
+        "Noem persoonlijke informatie alleen wanneer die relevant is voor de vraag. " +
+        "Gebruik de huidige datum uit de context; neem relatieve woorden zoals vandaag/morgen serieus. " +
+        "Prioriteitsgebieden van de gebruiker: " + enabledAreas + ". " +
+        "Reageerstijl: " + (toneRules[profile.tone] || toneRules.friendly) + " " +
+        "Extra gebruikersinstructies: " + String(profile.custom || "geen") + ". " +
+        "Recente conversatie (gebruik dit om herhaling te voorkomen): " +
+        JSON.stringify(conversation) + ". " +
+        "Dashboardcontext (dit is de actuele bron van waarheid): " +
         JSON.stringify(context);
 
       const result =
