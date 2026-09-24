@@ -10,5 +10,13 @@ services:
         sync: false
       - key: NEWSKY_AIRLINE_ID
         value: 6671c567ed19d758f72965d4
+      - key: NEWSKY_API_KEY
+        sync: false
       - key: SIMBRIEF_USERNAME
         sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_FALLBACK_MODEL
+        value: gemini-3.1-flash-lite
