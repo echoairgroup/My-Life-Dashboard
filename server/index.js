@@ -13,7 +13,7 @@ const NEWSKY_KEY = process.env.NEWSKY_API_KEY || "";
 const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = "gemini-3.6-flash";
-const GEMINI_FALLBACK_MODEL = "gemini-3.7-flash";
+const AI_BUILD = "gemini36-only-2026-09-24";
 
 async function callGemini(instructions, input, model = GEMINI_MODEL, image = null) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
@@ -38,14 +38,6 @@ async function callGemini(instructions, input, model = GEMINI_MODEL, image = nul
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = data?.error?.message || ("Gemini HTTP " + response.status);
-    const overloaded =
-      response.status === 429 ||
-      response.status === 503 ||
-      /high demand|overloaded|temporar|unavailable|capacity|resource exhausted/i.test(message);
-
-    if (model === GEMINI_MODEL && model !== GEMINI_FALLBACK_MODEL && overloaded) {
-      return callGemini(instructions, input, GEMINI_FALLBACK_MODEL, image);
-    }
     throw Error(message);
   }
   const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
@@ -216,14 +208,17 @@ app.get("/health", (_, res) => res.json({
   ok: true,
   service: "my-life-dashboard-api",
   ai: Boolean(GEMINI_KEY),
-  aiProvider: "gemini"
+  aiProvider: "gemini",
+  aiModel: GEMINI_MODEL,
+  aiBuild: AI_BUILD
 }));
 
 app.get("/api/ai/status", (_, res) => res.json({
   configured: Boolean(GEMINI_KEY),
   provider: "Gemini",
   model: GEMINI_MODEL,
-  fallbackModel: GEMINI_FALLBACK_MODEL
+  fallbackModel: null,
+  build: AI_BUILD
 }));
 
 app.post("/api/ai/chat", async (req, res) => {
