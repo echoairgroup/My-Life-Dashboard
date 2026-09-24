@@ -8,6 +8,8 @@ const DEFAULTS=[
 ];
 const PROFILE_KEY="my-life-ai-profile-v1";
 const API_KEY="my-life-dashboard-api-url";
+const CHAT_KEY="my-life-ai-chat-v2";
+const DASHBOARD_KEY="my-life-dashboard-v1";
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const profile=()=>{try{return JSON.parse(localStorage.getItem(PROFILE_KEY)||"{}")}catch{return{}}};
@@ -84,6 +86,9 @@ function addNav(view,icon,label){
   }
   b.onclick=()=>show(view);
 }
+function chatHistory(){try{return JSON.parse(localStorage.getItem(CHAT_KEY)||"[]")}catch{return[]}}
+function saveChatHistory(h){localStorage.setItem(CHAT_KEY,JSON.stringify(h.slice(-14)))}
+function dashboardState(){try{return JSON.parse(localStorage.getItem(DASHBOARD_KEY)||"{}")}catch{return{}}}
 function ensureSettings(){
   if(q("#view-ai-settings"))return;
   const v=document.createElement("section");
@@ -120,6 +125,8 @@ function ensureSettings(){
     p.model=q("#aiModelSelect").value;
     p.name=q("#aiName").value.trim();
     p.custom=q("#aiCustom").value.trim();
+    p.tone=q("#aiTone").value;
+    p.focus={tasks:q("#focusTasks").checked,school:q("#focusSchool").checked,planning:q("#focusPlanning").checked,goals:q("#focusGoals").checked,flights:q("#focusFlights").checked,general:q("#focusGeneral").checked};
     saveProfile(p);
     q("#aiSimpleSaved").textContent="✓ AI-instellingen opgeslagen.";
   };
@@ -132,6 +139,8 @@ function loadSettings(){
   if(q("#aiModelSelect"))q("#aiModelSelect").value=p.model||"gemini-3.8-flash";
   if(q("#aiName"))q("#aiName").value=p.name||"";
   if(q("#aiCustom"))q("#aiCustom").value=p.custom||"";
+  if(q("#aiTone"))q("#aiTone").value=p.tone||"friendly";
+  ["Tasks","School","Planning","Goals","Flights","General"].forEach(k=>{const el=q("#focus"+k);if(el)el.checked=p.focus?.[k.toLowerCase()]!==false});
 }
 async function updateStatus(){
   const box=q("#aiStatus");if(!box)return;
@@ -148,7 +157,7 @@ async function updateStatus(){
   }
 }
 function context(){
-  const s=window.state||{};
+  const s=dashboardState();
   return{
     today:new Date().toISOString().slice(0,10),
     tasks:(s.tasks||[]).slice(0,80),
@@ -156,7 +165,8 @@ function context(){
     flights:(s.flights||[]).slice(-30),
     plannedFlight:s.plannedFlight||null,
     goals:(()=>{try{return JSON.parse(localStorage.getItem("my-life-goals-v1")||"[]")}catch{return[]}})(),
-    aiProfile:profile()
+    aiProfile:profile(),
+    recentConversation:chatHistory().slice(-10)
   };
 }
 function addMessage(role,text){
@@ -180,7 +190,9 @@ async function send(){
     }
     const p=profile();
     const d=await api("/api/ai/chat",{message:text||"Analyseer deze afbeelding en help me ermee.",context:context(),model:p.model||"gemini-3.8-flash",image});
-    wait.textContent=d.text||"Geen antwoord ontvangen.";
+    const answer=d.text||"Geen antwoord ontvangen.";
+    wait.textContent=answer;
+    const updated=chatHistory();updated.push({role:"assistant",text:answer});saveChatHistory(updated);
     updateStatus();
   }catch(e){
     wait.textContent="❌ "+e.message;
@@ -199,7 +211,7 @@ function init(){
   const open=q("#openAISettings");
   if(open&&!open.dataset.aiBound){open.dataset.aiBound="1";open.onclick=()=>{loadSettings();show("ai-settings")}}
   const clear=q("#clearAI");
-  if(clear&&!clear.dataset.aiBound){clear.dataset.aiBound="1";clear.onclick=()=>{q("#aiMessages").innerHTML='<div class="ai-bubble assistant">Chat gewist. Waar wil je mee aan de slag?</div>'}}
+  if(clear&&!clear.dataset.aiBound){clear.dataset.aiBound="1";clear.onclick=()=>{localStorage.removeItem(CHAT_KEY);q("#aiMessages").innerHTML='<div class="ai-bubble assistant">Chat gewist. Waar wil je mee aan de slag?</div>'}}
   if(location.hash==="#ai-settings")show("ai-settings");
   else if(location.hash==="#ai")show("ai");
   updateStatus();
