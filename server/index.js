@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import ICAL from "ical.js";
+import { initSync, putSync, getSync } from "./sync.js";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -1430,8 +1431,38 @@ app.get(
 );
 
 /* =========================================================
+   MULTI-DEVICE SYNC
+========================================================= */
+
+app.post("/api/sync/put", async (req, res) => {
+  try {
+    const syncId = String(req.body?.syncId || "");
+    const result = await putSync(syncId, req.body?.state || {});
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/sync/get/:syncId", async (req, res) => {
+  try {
+    const syncId = String(req.params.syncId || "");
+    if (!/^[a-f0-9]{20,80}$/i.test(syncId)) {
+      return res.status(400).json({ ok: false, error: "Ongeldige sync-code." });
+    }
+    const result = await getSync(syncId);
+    if (!result) return res.status(404).json({ ok: false, error: "Sync-code niet gevonden." });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+/* =========================================================
    START SERVER
 ========================================================= */
+
+initSync().catch(error => console.error("Sync database init failed:", error.message));
 
 app.listen(
   PORT,
