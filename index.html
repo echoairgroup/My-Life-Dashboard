@@ -49,6 +49,32 @@
 <section class="view" id="view-flights"><div class="page-head"><div><p class="eyebrow">FLIGHT SIM</p><h1>Flight Log</h1><p>Houd je virtuele vluchten en statistieken bij.</p></div><button class="primary-btn" id="flightAdd">＋ Vlucht loggen</button></div><div class="stats-grid flight-stats"><article class="stat-card"><div class="stat-icon blue">✈</div><div><span>Vluchten</span><strong id="flightCount">0</strong></div></article><article class="stat-card"><div class="stat-icon green">NM</div><div><span>Afstand</span><strong id="flightDistance">0</strong></div></article><article class="stat-card"><div class="stat-icon purple">⏱</div><div><span>Vliegtijd</span><strong id="flightTime">0h</strong></div></article><article class="stat-card"><div class="stat-icon orange">★</div><div><span>Gem. rating</span><strong id="flightRating">—</strong></div></article></div><div class="panel"><div class="panel-head"><div><span class="panel-kicker">Logboek</span><h2>Mijn vluchten</h2></div><input id="flightSearch" class="mini-search" placeholder="Zoeken..."></div><div id="flightList" class="flight-table"></div></div></section>
 <section class="view" id="view-focus"><div class="focus-page"><p class="eyebrow">DEEP WORK</p><h1>Focus</h1><p>Leg je telefoon neer. Kies één ding. Begin.</p><div class="timer-card"><div class="timer-mode"><button class="active" data-min="25">Focus 25</button><button data-min="50">Focus 50</button><button data-min="5">Pauze 5</button></div><div id="timer">25:00</div><div class="timer-status" id="timerStatus">Klaar wanneer jij dat bent.</div><div class="timer-actions"><button class="primary-btn" id="timerStart">Start focus</button><button class="ghost-btn" id="timerReset">Reset</button></div></div><div class="focus-tips"><div>01<strong>Leg één concrete taak klaar.</strong></div><div>02<strong>Zet meldingen uit.</strong></div><div>03<strong>Werk tot de timer klaar is.</strong></div></div></div></section>
 <section class="view" id="view-stats"><div class="page-head"><div><p class="eyebrow">INZICHT</p><h1>Statistieken</h1><p>Zie waar je tijd en aandacht naartoe gaan.</p></div></div><div class="stats-grid"><article class="stat-card"><div class="stat-icon blue">✓</div><div><span>Totaal taken</span><strong id="totalTasks">0</strong></div></article><article class="stat-card"><div class="stat-icon green">%</div><div><span>Taak completion</span><strong id="completion">0%</strong></div></article><article class="stat-card"><div class="stat-icon purple">✈</div><div><span>Flight hours</span><strong id="statHours">0h</strong></div></article><article class="stat-card"><div class="stat-icon orange">★</div><div><span>Focus sessies</span><strong id="focusSessions">0</strong></div></article></div><div class="panel"><div class="panel-head"><div><span class="panel-kicker">Verdeling</span><h2>Prioriteiten</h2></div></div><div id="priorityChart" class="bars"></div></div></section>
+<section class="view" id="view-ai">
+<div class="page-head">
+  <div><p class="eyebrow">MY LIFE AI</p><h1>AI Workspace</h1><p>Een echte AI-assistent voor je dashboard — inclusief widgets die je zelf kunt laten bouwen.</p></div>
+  <div class="ai-head-actions"><button class="ghost-btn" id="openAISettings">⚙ AI Settings</button><div id="aiStatus" class="ai-status"><span class="ai-dot"></span> AI controleren…</div></div>
+</div>
+<div class="ai-layout">
+  <div class="panel ai-chat">
+    <div class="panel-head"><div><span class="panel-kicker">ASSISTENT</span><h2>Waar kan ik je mee helpen?</h2></div><button class="ghost-btn" id="clearAI">Wis chat</button></div>
+    <div id="aiMessages" class="ai-messages"><div class="ai-bubble assistant">Hoi! Ik ben je My Life-assistent. Vraag me iets over je planning, school, taken, doelen of Flight Sim.</div></div>
+    <form id="aiForm" class="ai-form">
+      <label class="ai-upload-btn" title="Foto toevoegen">📷<input id="aiImage" type="file" accept="image/*" hidden></label>
+      <input id="aiInput" autocomplete="off" placeholder="Bijv. Wat moet ik vandaag doen?">
+      <span id="aiImageName" class="ai-image-name"></span>
+      <button class="primary-btn">Stuur</button>
+    </form>
+  </div>
+  <div class="panel widget-builder">
+    <div class="panel-head"><div><span class="panel-kicker">WIDGET LAB</span><h2>Bouw je eigen widget</h2></div></div>
+    <p class="muted">Beschrijf wat je wilt zien. De AI maakt HTML, CSS en JavaScript voor een zelfstandige dashboard-widget.</p>
+    <textarea id="widgetPrompt" placeholder="Bijv. Maak een mooie widget met mijn volgende les, lokaal en starttijd."></textarea>
+    <button id="buildWidget" class="primary-btn">✦ Genereer widget</button>
+    <div id="widgetPreview" class="widget-preview"><span>Nog geen widget. Beschrijf hierboven wat je wilt bouwen.</span></div>
+    <div id="savedWidgets" class="saved-widgets"></div>
+  </div>
+</div>
+</section>
 <section class="view" id="view-settings"><div class="page-head"><div><p class="eyebrow">SYSTEEM</p><h1>Instellingen</h1><p>Pas je dashboard aan.</p></div></div><div class="settings-grid"><article class="panel"><h2>Profiel</h2><label>Naam<input id="nameInput" placeholder="Hoe wil je begroet worden?"></label><label>Week begint op<select id="weekStart"><option value="1">Maandag</option><option value="0">Zondag</option></select></label><button class="primary-btn" id="saveSettings">Opslaan</button></article><article class="panel"><h2>Data</h2><p class="muted">Je gegevens worden lokaal in deze browser opgeslagen.</p><div class="settings-actions"><button class="ghost-btn" id="demoData">Voorbeelddata laden</button><button class="danger-btn" id="clearData">Alles wissen</button></div></article></div></section>
 </div></main></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal" id="modal"></div></div><div class="toast" id="toast"></div>
