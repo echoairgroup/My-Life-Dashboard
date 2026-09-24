@@ -7,7 +7,7 @@ const getGoals=()=>JSON.parse(localStorage.getItem(goalsKey)||"[]");
 const saveGoals=x=>localStorage.setItem(goalsKey,JSON.stringify(x));
 const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
 const fmt=x=>new Intl.DateTimeFormat("nl-NL",{weekday:"short",day:"numeric",month:"short"}).format(new Date(x+"T12:00:00"));
-function addNav(view,icon,label){const nav=$(".sidebar nav");if(!nav||nav.querySelector('[data-view="'+view+'"]'))return;const b=document.createElement("button");b.className="nav-item";b.dataset.view=view;b.innerHTML="<span>"+icon+"</span>"+label;nav.appendChild(b);b.onclick=()=>show(view)}
+function addNav(view,icon,label){const nav=$(".sidebar nav");if(!nav)return;let b=nav.querySelector('[data-view="'+view+'"]');if(!b){b=document.createElement("button");b.className="nav-item";b.dataset.view=view;b.innerHTML="<span>"+icon+"</span>"+label;nav.appendChild(b)}b.onclick=()=>show(view)}
 function page(view,html){if($("#view-"+view))return;const v=document.createElement("section");v.className="view";v.id="view-"+view;v.innerHTML=html;$(".content").appendChild(v)}
 function show(view){$$(".view").forEach(v=>v.classList.remove("active"));const v=$("#view-"+view);if(!v)return;v.classList.add("active");$$(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("#viewTitle").textContent={today:"Vandaag",agenda:"Agenda",homework:"Huiswerk",goals:"Doelen"}[view]||view;history.replaceState(null,"","#"+view);render(view)}
 function time(x){return x?new Intl.DateTimeFormat("nl-NL",{hour:"2-digit",minute:"2-digit"}).format(new Date(x)):""}
