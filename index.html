@@ -1,104 +1,47 @@
 <!doctype html>
 <html lang="nl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b0f14">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111820">
 <meta name="description" content="My Life Dashboard — één plek voor school, taken, planning, focus en flight sim.">
 <title>My Life Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
 </head>
 <body>
 <div class="app-shell">
 <aside class="sidebar" id="sidebar">
-  <div class="brand"><div class="brand-mark">ML</div><div><strong>My Life</strong><span>Dashboard</span></div></div>
-  <nav>
-    <p class="nav-label">Overzicht</p>
-    <button class="nav-item active" data-view="dashboard"><span>⌂</span>Dashboard</button>
-    <button class="nav-item" data-view="tasks"><span>✓</span>Taken</button>
-    <button class="nav-item" data-view="planning"><span>◷</span>Planning</button>
-    <p class="nav-label">Mijn leven</p>
-    <button class="nav-item" data-view="school"><span>▣</span>School</button>
-    <button class="nav-item" data-view="flights"><span>✈</span>Flight Sim</button>
-    <button class="nav-item" data-view="focus"><span>◉</span>Focus</button>
-    <button class="nav-item" data-view="stats"><span>↗</span>Statistieken</button>
-    <p class="nav-label">Systeem</p>
-    <button class="nav-item" data-view="settings"><span>⚙</span>Instellingen</button>
-  </nav>
-  <div class="sidebar-bottom"><div class="storage-dot"></div><span>Lokale opslag actief</span></div>
+<div class="brand"><div class="brand-mark">ML</div><div><strong>My Life</strong><span>Dashboard</span></div></div>
+<nav>
+<p class="nav-label">Overzicht</p>
+<button class="nav-item active" data-view="dashboard"><span>⌂</span>Dashboard</button>
+<button class="nav-item" data-view="tasks"><span>✓</span>Taken</button>
+<button class="nav-item" data-view="planning"><span>◷</span>Planning</button>
+<p class="nav-label">Mijn leven</p>
+<button class="nav-item" data-view="school"><span>▣</span>School</button>
+<button class="nav-item" data-view="flights"><span>✈</span>Flight Sim</button>
+<button class="nav-item" data-view="focus"><span>◉</span>Focus</button>
+<button class="nav-item" data-view="stats"><span>↗</span>Statistieken</button>
+<p class="nav-label">Systeem</p><button class="nav-item" data-view="settings"><span>⚙</span>Instellingen</button>
+</nav><div class="sidebar-bottom"><div class="storage-dot"></div><span>Lokale opslag actief</span></div>
 </aside>
-
-<main class="main">
-<header class="topbar">
-  <button class="icon-btn mobile-only" id="menuBtn">☰</button>
-  <div class="breadcrumbs"><span>My Life</span><b>/</b><strong id="viewTitle">Dashboard</strong></div>
-  <div class="top-actions">
-    <button class="icon-btn" id="themeBtn" title="Thema wisselen">☼</button>
-    <button class="avatar" id="quickProfile">M</button>
-  </div>
-</header>
-
+<main class="main"><header class="topbar"><button class="icon-btn mobile-only" id="menuBtn">☰</button><div class="breadcrumbs"><span>My Life</span><b>/</b><strong id="viewTitle">Dashboard</strong></div><div class="top-actions"><button class="icon-btn" id="themeBtn">☼</button><button class="avatar" id="quickProfile">M</button></div></header>
 <div class="content">
-<section class="view active" id="view-dashboard">
-  <div class="hero">
-    <div><p class="eyebrow" id="dateLabel"></p><h1 id="greeting">Goedemiddag.</h1><p class="hero-sub">Alles wat vandaag belangrijk is, op één plek.</p></div>
-    <button class="primary-btn" id="quickAdd">＋ Nieuwe taak</button>
-  </div>
-  <div class="stats-grid">
-    <article class="stat-card"><div class="stat-icon blue">✓</div><div><span>Openstaande taken</span><strong id="statOpen">0</strong></div></article>
-    <article class="stat-card"><div class="stat-icon orange">!</div><div><span>Vandaag</span><strong id="statToday">0</strong></div></article>
-    <article class="stat-card"><div class="stat-icon purple">◷</div><div><span>Deze week</span><strong id="statWeek">0</strong></div></article>
-    <article class="stat-card"><div class="stat-icon green">★</div><div><span>Afgerond</span><strong id="statDone">0</strong></div></article>
-  </div>
-  <div class="dashboard-grid">
-    <article class="panel large"><div class="panel-head"><div><span class="panel-kicker">Vandaag</span><h2>Wat staat er op je lijst?</h2></div><button class="text-btn" data-goto="tasks">Alles bekijken →</button></div><div id="todayList" class="task-list empty-state"><div class="empty-icon">✓</div><strong>Nog niets gepland</strong><span>Voeg een taak toe en je bent vertrokken.</span></div></article>
-    <article class="panel"><div class="panel-head"><div><span class="panel-kicker">Snel</span><h2>Quick add</h2></div></div>
-      <div class="quick-actions">
-        <button data-action="task">＋ <span>Taak</span><small>Ctrl K</small></button>
-        <button data-action="school">▣ <span>Schoolwerk</span></button>
-        <button data-action="flight">✈ <span>Vlucht loggen</span></button>
-        <button data-action="focus">◉ <span>Focus starten</span></button>
-      </div>
-    </article>
-    <article class="panel"><div class="panel-head"><div><span class="panel-kicker">Voortgang</span><h2>Deze week</h2></div></div><div class="progress-wrap"><div class="progress-ring" id="weekRing"><strong id="weekPct">0%</strong><span>voltooid</span></div><div class="legend"><div><i></i>Afgerond <b id="legendDone">0</b></div><div><i></i>Open <b id="legendOpen">0</b></div></div></div></article>
-    <article class="panel"><div class="panel-head"><div><span class="panel-kicker">Flight Sim</span><h2>Laatste vlucht</h2></div><button class="text-btn" data-goto="flights">Logboek →</button></div><div id="lastFlight" class="flight-preview empty-state small"><div class="empty-icon">✈</div><strong>Nog geen vluchten</strong><span>Log je eerste vlucht.</span></div></article>
-  </div>
-</section>
-
-<section class="view" id="view-tasks"><div class="page-head"><div><p class="eyebrow">ORGANISEREN</p><h1>Taken</h1><p>Alles wat je niet uit je hoofd wilt hoeven onthouden.</p></div><button class="primary-btn" id="taskAdd2">＋ Nieuwe taak</button></div>
-<div class="toolbar"><input id="taskSearch" class="search" placeholder="⌕  Zoek in taken..."><select id="taskFilter"><option value="all">Alle taken</option><option value="open">Open</option><option value="done">Afgerond</option><option value="today">Vandaag</option></select><select id="taskPriority"><option value="all">Alle prioriteiten</option><option value="high">Hoog</option><option value="medium">Gemiddeld</option><option value="low">Laag</option></select></div>
-<div id="allTasks" class="full-list"></div></section>
-
-<section class="view" id="view-planning"><div class="page-head"><div><p class="eyebrow">OVERZICHT</p><h1>Planning</h1><p>Plan je dagen zonder dat het een tweede baan wordt.</p></div><button class="primary-btn" id="planAdd">＋ Nieuwe taak</button></div>
-<div class="calendar-head"><button class="icon-btn" id="prevMonth">‹</button><h2 id="monthTitle"></h2><button class="icon-btn" id="nextMonth">›</button></div><div id="calendar" class="calendar"></div></section>
-
-<section class="view" id="view-school"><div class="page-head"><div><p class="eyebrow">SCHOOL HUB</p><h1>School</h1><p>Deadlines, vakken en huiswerk bij elkaar.</p></div><button class="primary-btn" id="schoolAdd">＋ Schoolwerk</button></div>
-<div class="school-grid"><article class="panel"><div class="panel-head"><div><span class="panel-kicker">Vakken</span><h2>Mijn vakken</h2></div></div><div id="subjects" class="subject-list"></div><button class="ghost-btn full" id="addSubject">＋ Vak toevoegen</button></article>
-<article class="panel large"><div class="panel-head"><div><span class="panel-kicker">Deadlines</span><h2>Schoolwerk</h2></div><span class="badge" id="schoolCount">0 open</span></div><div id="schoolTasks" class="task-list"></div></article></div></section>
-
-<section class="view" id="view-flights"><div class="page-head"><div><p class="eyebrow">FLIGHT SIM</p><h1>Flight Log</h1><p>Houd je virtuele vluchten en statistieken bij.</p></div><button class="primary-btn" id="flightAdd">＋ Vlucht loggen</button></div>
-<div class="stats-grid flight-stats"><article class="stat-card"><div class="stat-icon blue">✈</div><div><span>Vluchten</span><strong id="flightCount">0</strong></div></article><article class="stat-card"><div class="stat-icon green">NM</div><div><span>Afstand</span><strong id="flightDistance">0</strong></div></article><article class="stat-card"><div class="stat-icon purple">⏱</div><div><span>Vliegtijd</span><strong id="flightTime">0h</strong></div></article><article class="stat-card"><div class="stat-icon orange">★</div><div><span>Gem. rating</span><strong id="flightRating">—</strong></div></article></div>
-<div class="panel"><div class="panel-head"><div><span class="panel-kicker">Logboek</span><h2>Mijn vluchten</h2></div><input id="flightSearch" class="mini-search" placeholder="Zoeken..."></div><div id="flightList" class="flight-table"></div></div></section>
-
+<section class="view active" id="view-dashboard"><div class="hero"><div><p class="eyebrow" id="dateLabel"></p><h1 id="greeting">Goedemiddag.</h1><p class="hero-sub">Alles wat vandaag belangrijk is, op één plek.</p></div><button class="primary-btn" id="quickAdd">＋ Nieuwe taak</button></div>
+<div class="stats-grid"><article class="stat-card"><div class="stat-icon blue">✓</div><div><span>Openstaande taken</span><strong id="statOpen">0</strong></div></article><article class="stat-card"><div class="stat-icon orange">!</div><div><span>Vandaag</span><strong id="statToday">0</strong></div></article><article class="stat-card"><div class="stat-icon purple">◷</div><div><span>Deze week</span><strong id="statWeek">0</strong></div></article><article class="stat-card"><div class="stat-icon green">★</div><div><span>Afgerond</span><strong id="statDone">0</strong></div></article></div>
+<div class="dashboard-grid"><article class="panel large"><div class="panel-head"><div><span class="panel-kicker">Vandaag</span><h2>Wat staat er op je lijst?</h2></div><button class="text-btn" data-goto="tasks">Alles bekijken →</button></div><div id="todayList" class="task-list empty-state"><div class="empty-icon">✓</div><strong>Nog niets gepland</strong><span>Voeg een taak toe en je bent vertrokken.</span></div></article>
+<article class="panel"><div class="panel-head"><div><span class="panel-kicker">Snel</span><h2>Quick add</h2></div></div><div class="quick-actions"><button data-action="task">＋ <span>Taak</span><small>Ctrl K</small></button><button data-action="school">▣ <span>Schoolwerk</span></button><button data-action="flight">✈ <span>Vlucht loggen</span></button><button data-action="focus">◉ <span>Focus starten</span></button></div></article>
+<article class="panel"><div class="panel-head"><div><span class="panel-kicker">Voortgang</span><h2>Deze week</h2></div></div><div class="progress-wrap"><div class="progress-ring" id="weekRing"><strong id="weekPct">0%</strong><span>voltooid</span></div><div class="legend"><div><i></i>Afgerond <b id="legendDone">0</b></div><div><i></i>Open <b id="legendOpen">0</b></div></div></div></article>
+<article class="panel"><div class="panel-head"><div><span class="panel-kicker">Flight Sim</span><h2>Laatste vlucht</h2></div><button class="text-btn" data-goto="flights">Logboek →</button></div><div id="lastFlight" class="flight-preview empty-state small"><div class="empty-icon">✈</div><strong>Nog geen vluchten</strong><span>Log je eerste vlucht.</span></div></article></div></section>
+<section class="view" id="view-tasks"><div class="page-head"><div><p class="eyebrow">ORGANISEREN</p><h1>Taken</h1><p>Alles wat je niet uit je hoofd wilt hoeven onthouden.</p></div><button class="primary-btn" id="taskAdd2">＋ Nieuwe taak</button></div><div class="toolbar"><input id="taskSearch" class="search" placeholder="⌕  Zoek in taken..."><select id="taskFilter"><option value="all">Alle taken</option><option value="open">Open</option><option value="done">Afgerond</option><option value="today">Vandaag</option></select><select id="taskPriority"><option value="all">Alle prioriteiten</option><option value="high">Hoog</option><option value="medium">Gemiddeld</option><option value="low">Laag</option></select></div><div id="allTasks" class="full-list"></div></section>
+<section class="view" id="view-planning"><div class="page-head"><div><p class="eyebrow">OVERZICHT</p><h1>Planning</h1><p>Plan je dagen zonder dat het een tweede baan wordt.</p></div><button class="primary-btn" id="planAdd">＋ Nieuwe taak</button></div><div class="calendar-head"><button class="icon-btn" id="prevMonth">‹</button><h2 id="monthTitle"></h2><button class="icon-btn" id="nextMonth">›</button></div><div id="calendar" class="calendar"></div></section>
+<section class="view" id="view-school"><div class="page-head"><div><p class="eyebrow">SCHOOL HUB</p><h1>School</h1><p>Deadlines, vakken en huiswerk bij elkaar.</p></div><button class="primary-btn" id="schoolAdd">＋ Schoolwerk</button></div><div class="school-grid"><article class="panel"><div class="panel-head"><div><span class="panel-kicker">Vakken</span><h2>Mijn vakken</h2></div></div><div id="subjects" class="subject-list"></div><button class="ghost-btn full" id="addSubject">＋ Vak toevoegen</button></article><article class="panel large"><div class="panel-head"><div><span class="panel-kicker">Deadlines</span><h2>Schoolwerk</h2></div><span class="badge" id="schoolCount">0 open</span></div><div id="schoolTasks" class="task-list"></div></article></div></section>
+<section class="view" id="view-flights"><div class="page-head"><div><p class="eyebrow">FLIGHT SIM</p><h1>Flight Log</h1><p>Houd je virtuele vluchten en statistieken bij.</p></div><button class="primary-btn" id="flightAdd">＋ Vlucht loggen</button></div><div class="stats-grid flight-stats"><article class="stat-card"><div class="stat-icon blue">✈</div><div><span>Vluchten</span><strong id="flightCount">0</strong></div></article><article class="stat-card"><div class="stat-icon green">NM</div><div><span>Afstand</span><strong id="flightDistance">0</strong></div></article><article class="stat-card"><div class="stat-icon purple">⏱</div><div><span>Vliegtijd</span><strong id="flightTime">0h</strong></div></article><article class="stat-card"><div class="stat-icon orange">★</div><div><span>Gem. rating</span><strong id="flightRating">—</strong></div></article></div><div class="panel"><div class="panel-head"><div><span class="panel-kicker">Logboek</span><h2>Mijn vluchten</h2></div><input id="flightSearch" class="mini-search" placeholder="Zoeken..."></div><div id="flightList" class="flight-table"></div></div></section>
 <section class="view" id="view-focus"><div class="focus-page"><p class="eyebrow">DEEP WORK</p><h1>Focus</h1><p>Leg je telefoon neer. Kies één ding. Begin.</p><div class="timer-card"><div class="timer-mode"><button class="active" data-min="25">Focus 25</button><button data-min="50">Focus 50</button><button data-min="5">Pauze 5</button></div><div id="timer">25:00</div><div class="timer-status" id="timerStatus">Klaar wanneer jij dat bent.</div><div class="timer-actions"><button class="primary-btn" id="timerStart">Start focus</button><button class="ghost-btn" id="timerReset">Reset</button></div></div><div class="focus-tips"><div>01<strong>Leg één concrete taak klaar.</strong></div><div>02<strong>Zet meldingen uit.</strong></div><div>03<strong>Werk tot de timer klaar is.</strong></div></div></div></section>
-
 <section class="view" id="view-stats"><div class="page-head"><div><p class="eyebrow">INZICHT</p><h1>Statistieken</h1><p>Zie waar je tijd en aandacht naartoe gaan.</p></div></div><div class="stats-grid"><article class="stat-card"><div class="stat-icon blue">✓</div><div><span>Totaal taken</span><strong id="totalTasks">0</strong></div></article><article class="stat-card"><div class="stat-icon green">%</div><div><span>Taak completion</span><strong id="completion">0%</strong></div></article><article class="stat-card"><div class="stat-icon purple">✈</div><div><span>Flight hours</span><strong id="statHours">0h</strong></div></article><article class="stat-card"><div class="stat-icon orange">★</div><div><span>Focus sessies</span><strong id="focusSessions">0</strong></div></article></div><div class="panel"><div class="panel-head"><div><span class="panel-kicker">Verdeling</span><h2>Prioriteiten</h2></div></div><div id="priorityChart" class="bars"></div></div></section>
-
-<section class="view" id="view-settings"><div class="page-head"><div><p class="eyebrow">SYSTEEM</p><h1>Instellingen</h1><p>Pas je dashboard aan.</p></div></div><div class="settings-grid"><article class="panel"><h2>Profiel</h2><label>Naam<input id="nameInput" placeholder="Hoe wil je begroet worden?"></label><label>Week begint op<select id="weekStart"><option value="1">Maandag</option><option value="0">Zondag</option></select></label><button class="primary-btn" id="saveSettings">Opslaan</button></article><article class="panel"><h2>Data</h2><p class="muted">Je gegevens worden lokaal in deze browser opgeslagen. Er is geen account of backend nodig.</p><div class="settings-actions"><button class="ghost-btn" id="demoData">Voorbeelddata laden</button><button class="danger-btn" id="clearData">Alles wissen</button></div></article></div></section>
-</div>
-</main>
-</div>
-
-<div class="modal-backdrop" id="modalBackdrop"><div class="modal" id="modal"></div></div>
-<div class="toast" id="toast"></div>
-<script src="app.js"></script>
-<script src="enhancements.js"></script>
-<script src="enhancements.js"></script>
-</body>
-</html>
+<section class="view" id="view-settings"><div class="page-head"><div><p class="eyebrow">SYSTEEM</p><h1>Instellingen</h1><p>Pas je dashboard aan.</p></div></div><div class="settings-grid"><article class="panel"><h2>Profiel</h2><label>Naam<input id="nameInput" placeholder="Hoe wil je begroet worden?"></label><label>Week begint op<select id="weekStart"><option value="1">Maandag</option><option value="0">Zondag</option></select></label><button class="primary-btn" id="saveSettings">Opslaan</button></article><article class="panel"><h2>Data</h2><p class="muted">Je gegevens worden lokaal in deze browser opgeslagen.</p><div class="settings-actions"><button class="ghost-btn" id="demoData">Voorbeelddata laden</button><button class="danger-btn" id="clearData">Alles wissen</button></div></article></div></section>
+</div></main></div>
+<div class="modal-backdrop" id="modalBackdrop"><div class="modal" id="modal"></div></div><div class="toast" id="toast"></div>
+<script src="app.js"></script><script src="enhancements.js"></script><script src="integrations.js"></script>
+</body></html>
