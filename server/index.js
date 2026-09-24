@@ -12,12 +12,12 @@ const NEWSKY_ID = process.env.NEWSKY_AIRLINE_ID || "6671c567ed19d758f72965d4";
 const NEWSKY_KEY = process.env.NEWSKY_API_KEY || "";
 const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
-const configuredGeminiModel = process.env.GEMINI_MODEL || "gemini-3.7-flash";
-const configuredFallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
+const configuredGeminiModel = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+const configuredFallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.7-flash";
 
 // Keep the dashboard on the free-tier Flash models even if Render still has
 // an older paid model such as gemini-3.8-flash configured.
-const FREE_GEMINI_MODELS = new Set(["gemini-3.7-flash", "gemini-3.6-flash"]);
+const FREE_GEMINI_MODELS = new Set(["gemini-3.6-flash", "gemini-3.7-flash"]);
 const GEMINI_MODEL = FREE_GEMINI_MODELS.has(configuredGeminiModel)
   ? configuredGeminiModel
   : "gemini-3.7-flash";
@@ -48,14 +48,18 @@ async function callGemini(instructions, input, model = GEMINI_MODEL, image = nul
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = data?.error?.message || ("Gemini HTTP " + response.status);
-    if (model === GEMINI_MODEL && model !== GEMINI_FALLBACK_MODEL &&
-        (response.status === 429 || response.status === 503 || /high demand|overloaded|temporar/i.test(message))) {
+    const overloaded =
+      response.status === 429 ||
+      response.status === 503 ||
+      /high demand|overloaded|temporar|unavailable|capacity|resource exhausted/i.test(message);
+
+    if (model === GEMINI_MODEL && model !== GEMINI_FALLBACK_MODEL && overloaded) {
       return callGemini(instructions, input, GEMINI_FALLBACK_MODEL, image);
     }
     throw Error(message);
   }
   const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
-  return text || "Geen antwoord ontvangen.";
+  return { text: text || "Geen antwoord ontvangen.", model };
 }
 
 let cache = {
@@ -228,7 +232,8 @@ app.get("/health", (_, res) => res.json({
 app.get("/api/ai/status", (_, res) => res.json({
   configured: Boolean(GEMINI_KEY),
   provider: "Gemini",
-  model: GEMINI_MODEL
+  model: GEMINI_MODEL,
+  fallbackModel: GEMINI_FALLBACK_MODEL
 }));
 
 app.post("/api/ai/chat", async (req, res) => {
@@ -243,8 +248,8 @@ app.post("/api/ai/chat", async (req, res) => {
       "Gebruik persoonlijke feiten uitsluitend uit de dashboardcontext en wees eerlijk als informatie ontbreekt. " +
       "Respecteer ook deze persoonlijke AI-instellingen: " + JSON.stringify(profile) + ". " +
       "Dashboardcontext: " + JSON.stringify(context);
-    const text = await callGemini(instructions, question, GEMINI_MODEL, image);
-    res.json({ text, model: GEMINI_MODEL, provider: "Gemini" });
+    const result = await callGemini(instructions, question, GEMINI_MODEL, image);
+    res.json({ text: result.text, model: result.model, provider: "Gemini" });
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
@@ -260,9 +265,9 @@ app.post("/api/ai/widget", async (req, res) => {
       "Gebruik window.MyLifeWidgetData voor dashboardgegevens. " +
       "De HTML, CSS en JS moeten direct in een sandboxed iframe kunnen draaien. " +
       "Widgetverzoek: " + prompt;
-    const raw = await callGemini(instructions, "");
-    const cleaned = raw.replace(/^\s*\`\`\`json\s*/i, "").replace(/\s*\`\`\`\s*$/i, "").trim();
-    res.json({ widget: JSON.parse(cleaned), model: GEMINI_MODEL, provider: "Gemini" });
+    const result = await callGemini(instructions, "");
+    const cleaned = result.text.replace(/^\s*\`\`\`json\s*/i, "").replace(/\s*\`\`\`\s*$/i, "").trim();
+    res.json({ widget: JSON.parse(cleaned), model: result.model, provider: "Gemini" });
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
