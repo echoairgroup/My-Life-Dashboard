@@ -12,15 +12,25 @@ const NEWSKY_ID = process.env.NEWSKY_AIRLINE_ID || "6671c567ed19d758f72965d4";
 const NEWSKY_KEY = process.env.NEWSKY_API_KEY || "";
 const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.7-flash";
-const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
+const configuredGeminiModel = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+const configuredFallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
+
+// Keep the dashboard on the free-tier Flash models even if Render still has
+// an older paid model such as gemini-3.8-flash configured.
+const FREE_GEMINI_MODELS = new Set(["gemini-3.7-flash", "gemini-3.6-flash"]);
+const GEMINI_MODEL = FREE_GEMINI_MODELS.has(configuredGeminiModel)
+  ? configuredGeminiModel
+  : "gemini-3.7-flash";
+const GEMINI_FALLBACK_MODEL = FREE_GEMINI_MODELS.has(configuredFallbackModel)
+  ? configuredFallbackModel
+  : "gemini-3.6-flash";
 
 async function callGemini(instructions, input, model = GEMINI_MODEL) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
   const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/" +
-      encodeURIComponent(GEMINI_MODEL) +
+      encodeURIComponent(model) +
       ":generateContent",
     {
       method: "POST",
@@ -36,7 +46,8 @@ async function callGemini(instructions, input, model = GEMINI_MODEL) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = data?.error?.message || ("Gemini HTTP " + response.status);
-    if (model === GEMINI_MODEL && (response.status === 429 || response.status === 503 || /high demand|overloaded|temporar/i.test(message))) {
+    if (model === GEMINI_MODEL && model !== GEMINI_FALLBACK_MODEL &&
+        (response.status === 429 || response.status === 503 || /high demand|overloaded|temporar/i.test(message))) {
       return callGemini(instructions, input, GEMINI_FALLBACK_MODEL);
     }
     throw Error(message);
