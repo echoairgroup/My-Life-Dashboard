@@ -57,7 +57,18 @@
     status();
   }
   async function status(){const box=document.querySelector("#integrationStatus");if(!box)return;if(!apiBase()){box.innerHTML='<span class="badge">API niet ingesteld</span>';return}try{const x=await get("/api/integrations/status");box.innerHTML=`<div class="integration-status"><span class="badge">${x.magister?"✓ Magister":"○ Magister"}</span><span class="badge">${x.newsky?"✓ NewSky":"○ NewSky"}</span><span class="badge">${x.simbrief?"✓ SimBrief":"○ SimBrief"}</span></div>`}catch{box.innerHTML='<span class="badge">API niet bereikbaar</span>';}}
-  async function sync(){if(!apiBase()){show();toast("Vul eerst je API URL in");return}try{const x=await get("/api/dashboard/sync");state.magister=x.magister?.events||[];state.newsky=x.newsky?.flights||[];state.simbrief=x.simbrief?.flight||null;localStorage.setItem("my-life-dashboard-integrations-cache",JSON.stringify(state));render();toast("Alles gesynchroniseerd")}catch(e){console.error(e);toast("Synchronisatie mislukt")}}
+  async function sync(){if(!apiBase()){show();toast("Vul eerst je API URL in");return}try{const x=await get("/api/dashboard/sync");state.magister=x.magister?.events||[];
+state.newsky=x.newsky?.flights||[];
+state.simbrief=x.simbrief?.flight||null;
+state.calendarEvents=state.magister.map(e=>({id:"magister-"+e.id,title:e.title,start:e.start,end:e.end,location:e.location,source:"magister"}));
+const existing=new Map((state.flights||[]).map(f=>[String(f.id||f.newskyId||""),f]));
+for(const f of state.newsky){const id=String(f.id||"");if(!id||existing.has(id))continue;existing.set(id,{id,newskyId:id,date:f.date?new Date(f.date).toISOString().slice(0,10):todayISO(),aircraft:f.aircraft||"Aircraft",dep:f.dep,arr:f.arr,distance:Number(f.distance||0),duration:Number(f.duration||0),rating:Number(f.rating||0),source:"newsky"});}
+state.flights=[...existing.values()];
+state.plannedFlight=state.simbrief||null;
+save();
+localStorage.setItem("my-life-dashboard-integrations-cache",JSON.stringify({magister:state.magister,newsky:state.newsky,simbrief:state.simbrief}));
+render();
+toast("Alles gesynchroniseerd")}catch(e){console.error(e);toast("Synchronisatie mislukt")}}
   window.MyLifeIntegrations={sync,show};
   window.addEventListener("load",()=>{add();try{Object.assign(state,JSON.parse(localStorage.getItem("my-life-dashboard-integrations-cache")||"{}"))}catch{};if(location.hash==="#integrations")show();if(apiBase())setTimeout(sync,1000);setInterval(()=>{if(apiBase()&&document.visibilityState==="visible")sync()},300000);});
 })();
