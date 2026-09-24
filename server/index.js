@@ -11,6 +11,9 @@ const SIMBRIEF=process.env.SIMBRIEF_USERNAME||"";
 let cache={m:{at:0,data:[]},n:{at:0,data:[]},s:{at:0,data:null}};
 const fresh=x=>x.at&&Date.now()-x.at<120000;
 const pick=(o,...ks)=>{for(const k of ks){const v=k.split(".").reduce((a,b)=>a?.[b],o);if(v!==undefined&&v!==null&&v!=="")return v}return""};
+const arraysDeep=(value,seen=new Set())=>{if(!value||typeof value!=="object"||seen.has(value))return[];seen.add(value);const out=[];if(Array.isArray(value))out.push(value);for(const v of Object.values(value)){if(v&&typeof v==="object")out.push(...arraysDeep(v,seen))}return out};
+const asNumber=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+const durationMinutes=v=>{if(v===null||v===undefined||v==="")return 0;if(typeof v==="number")return v;const str=String(v).trim();if(/^\d{3,4}$/.test(str)){const n=Number(str),mins=n%100,hours=Math.floor(n/100);return hours*60+mins}if(/^\d+:\d{2}$/.test(str)){const [h,m]=str.split(":").map(Number);return h*60+m}return asNumber(str)};
 const clean=x=>String(x??"").replace(/\\n/g," ").replace(/\\,/g,",").trim();
 
 async function magister(){
@@ -24,16 +27,35 @@ async function magister(){
 }
 async function newsky(){
  if(fresh(cache.n))return{configured:true,flights:cache.n.data};
+ const now=new Date(),from=new Date(now);from.setDate(now.getDate()-30);
+ const iso=d=>d.toISOString().slice(0,10);
+ const q=encodeURIComponent(NEWSKY_ID);
  const urls=[
-  "https://newsky.app/api/airline-api/flights/bydate?airlineId="+encodeURIComponent(NEWSKY_ID),
-  "https://newsky.app/api/airline-api/flights/bydate?airline="+encodeURIComponent(NEWSKY_ID)
+  `https://newsky.app/api/airline-api/flights/bydate?airlineId=${q}&from=${iso(from)}&to=${iso(now)}&page=1&limit=100`,
+  `https://newsky.app/api/airline-api/flights/bydate?airlineId=${q}&startDate=${iso(from)}&endDate=${iso(now)}&page=1&limit=100`,
+  `https://newsky.app/api/airline-api/flights/bydate?airline=${q}&from=${iso(from)}&to=${iso(now)}&page=1&limit=100`,
+  `https://newsky.app/api/airline-api/flights/bydate?airlineId=${q}`
  ];
  let last;
  for(const u of urls)try{
   const r=await fetch(u,{headers:{accept:"application/json"}});if(!r.ok){last=Error("NewSky HTTP "+r.status);continue}
-  const p=await r.json(),a=Array.isArray(p)?p:(p.flights||p.data||p.results||Object.values(p).find(Array.isArray)||[]);
-  const flights=a.map(f=>({id:String(pick(f,"_id","id","flightId")||crypto.randomUUID()),flightNumber:String(pick(f,"flightNumber","callsign","flight_number")||""),dep:String(pick(f,"dep.icao","dep","departure.icao","departure")||""),arr:String(pick(f,"arr.icao","arr","arrival.icao","arrival")||""),aircraft:String(pick(f,"aircraft.icao","aircraft","airframe.icao","airframe")||""),duration:Number(pick(f,"duration","flightTime")||0),distance:Number(pick(f,"distance","distanceNm")||0),rating:Number(pick(f,"rating","score","stars")||0),date:pick(f,"date","depTime","departureTime","createdAt")||null,source:"newsky"}));
-  cache.n={at:Date.now(),data:flights};return{configured:true,flights};
+  const p=await r.json();
+  const candidates=arraysDeep(p).filter(a=>a.some(x=>x&&typeof x==="object"&&!Array.isArray(x)));
+  const a=(Array.isArray(p)?p:null)||p.flights||p.data||p.results||candidates.sort((x,y)=>y.length-x.length)[0]||[];
+  const flights=a.filter(f=>f&&typeof f==="object").map(f=>({
+   id:String(pick(f,"_id","id","flightId","uuid")||crypto.randomUUID()),
+   flightNumber:String(pick(f,"flightNumber","callsign","flight_number","flight.number")||""),
+   dep:String(pick(f,"dep.icao","dep","departure.icao","departure","origin.icao","origin")||""),
+   arr:String(pick(f,"arr.icao","arr","arrival.icao","arrival","destination.icao","destination")||""),
+   aircraft:String(pick(f,"aircraft.icao","aircraft","airframe.icao","airframe","aircraftType")||""),
+   duration:durationMinutes(pick(f,"duration","flightTime","durationMinutes","flight_time")||0),
+   distance:asNumber(pick(f,"distance","distanceNm","distanceNM","flightDistance")||0),
+   rating:asNumber(pick(f,"rating","score","stars","flightRating")||0),
+   date:pick(f,"date","depTime","departureTime","createdAt","completedAt","finishedAt")||null,
+   source:"newsky"
+  })).filter(f=>f.dep&&f.arr);
+  if(flights.length){cache.n={at:Date.now(),data:flights};return{configured:true,flights}}
+  last=Error("NewSky gaf een lege vluchtlijst terug");
  }catch(e){last=e}
  throw last||Error("NewSky niet bereikbaar");
 }
@@ -43,7 +65,7 @@ async function simbrief(){
  const u="https://www.simbrief.com/api/xml.fetcher.php?username="+encodeURIComponent(SIMBRIEF)+"&json=1";
  const r=await fetch(u);if(!r.ok)throw Error("SimBrief HTTP "+r.status);
  const d=await r.json(),g=d.general||{},o=d.origin||{},a=d.destination||{},ac=d.aircraft||{},t=d.times||{},at=d.atc||{};
- const f={id:String(pick(g,"static_id","flight_number")||Date.now()),flightNumber:String(pick(g,"flight_number")||""),dep:String(pick(o,"icao_code","icao")||""),arr:String(pick(a,"icao_code","icao")||""),aircraft:String(pick(ac,"icaocode","icao","name")||""),route:String(pick(g,"route")||""),cruiseAltitude:String(pick(g,"initial_altitude")||""),distance:Number(pick(g,"air_distance","distance")||0),duration:Number(pick(t,"est_time_enroute","sched_time")||0),departure:pick(t,"sched_out","est_out")||null,callsign:String(pick(at,"callsign")||""),source:"simbrief"};
+ const f={id:String(pick(g,"static_id","flight_number")||Date.now()),flightNumber:String(pick(g,"flight_number")||""),dep:String(pick(o,"icao_code","icao")||""),arr:String(pick(a,"icao_code","icao")||""),aircraft:String(pick(ac,"icaocode","icao","name")||""),route:String(pick(g,"route")||""),cruiseAltitude:String(pick(g,"initial_altitude")||""),distance:asNumber(pick(g,"air_distance","distance")||0),duration:durationMinutes(pick(t,"est_time_enroute","sched_time")||0),departure:pick(t,"sched_out","est_out")||null,callsign:String(pick(at,"callsign")||""),source:"simbrief"};
  cache.s={at:Date.now(),data:f};return{configured:true,flight:f};
 }
 app.get("/health",(_,res)=>res.json({ok:true,service:"my-life-dashboard-api"}));
