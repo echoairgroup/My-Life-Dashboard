@@ -16,7 +16,7 @@ const GEMINI_MODEL = "gemini-3.5-flash-lite";
 const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
 const AI_BUILD = "gemini35-lite-with-25-lite-fallback-2026-09-24";
 
-async function callGemini(instructions, input, model = GEMINI_MODEL, image = null) {
+async function callGemini(instructions, input, model = GEMINI_MODEL, image = null, attempt = 0) {
   if (!GEMINI_KEY) throw Error("GEMINI_API_KEY ontbreekt in Render Environment");
 
   const prompt = (instructions ? instructions + "\n\n" : "") + String(input ?? "");
@@ -55,13 +55,13 @@ async function callGemini(instructions, input, model = GEMINI_MODEL, image = nul
       response.status === 503 ||
       /high demand|overloaded|temporar|unavailable|capacity|resource exhausted/i.test(message);
 
-    if (model === GEMINI_MODEL && overloaded) {
+    if (overloaded && attempt === 0) {
       await new Promise(resolve => setTimeout(resolve, 1200));
-      try {
-        return await callGemini(instructions, input, GEMINI_MODEL, image);
-      } catch {
-        return callGemini(instructions, input, GEMINI_FALLBACK_MODEL, image);
-      }
+      return callGemini(instructions, input, model, image, 1);
+    }
+
+    if (model === GEMINI_MODEL && overloaded) {
+      return callGemini(instructions, input, GEMINI_FALLBACK_MODEL, image, 0);
     }
 
     throw Error(message);
