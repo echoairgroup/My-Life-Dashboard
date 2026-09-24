@@ -26,6 +26,33 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = "gemini-3.5-flash-lite";
 
 /*
+ * Models exposed in the My Life AI model selector.
+ * These are current Gemini API text/multimodal models.
+ */
+const GEMINI_MODELS = {
+  "gemini-3.8-flash": {
+    name: "Gemini 3.8 Flash",
+    description: "Meest intelligente Flash-model voor complexe taken en langere redeneerketens."
+  },
+  "gemini-3.7-flash": {
+    name: "Gemini 3.7 Flash",
+    description: "Sterk voor complexe vragen, coding en multi-step opdrachten."
+  },
+  "gemini-3.5-flash": {
+    name: "Gemini 3.5 Flash",
+    description: "Sterk allround model voor dagelijkse en complexere taken."
+  },
+  "gemini-3.5-flash-lite": {
+    name: "Gemini 3.5 Flash-Lite",
+    description: "Snel, efficiënt en geschikt voor veel dagelijkse vragen."
+  },
+  "gemini-3.1-flash-lite": {
+    name: "Gemini 3.1 Flash-Lite",
+    description: "Snelle, efficiënte fallback en lichte assistent."
+  }
+};
+
+/*
  * Fallback model
  *
  * IMPORTANT:
@@ -34,8 +61,12 @@ const GEMINI_MODEL = "gemini-3.5-flash-lite";
  */
 const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 
+const isAllowedGeminiModel = model =>
+  typeof model === "string" &&
+  Object.prototype.hasOwnProperty.call(GEMINI_MODELS, model);
+
 const AI_BUILD =
-  "gemini35-lite-with-31-lite-fallback-2026-09-24";
+  "model-selector-2026-09-24";
 
 /* =========================================================
    GEMINI AI
@@ -888,6 +919,20 @@ app.get(
 ========================================================= */
 
 app.get(
+  "/api/ai/models",
+  (_, res) => {
+    res.json({
+      models: Object.entries(GEMINI_MODELS).map(([id, info]) => ({
+        id,
+        ...info
+      })),
+      defaultModel: GEMINI_MODEL,
+      fallbackModel: GEMINI_FALLBACK_MODEL
+    });
+  }
+);
+
+app.get(
   "/api/ai/status",
   (_, res) =>
     res.json({
@@ -933,6 +978,18 @@ app.post(
       const profile =
         context.aiProfile || {};
 
+      const requestedModel =
+        String(
+          req.body?.model ||
+          profile.model ||
+          GEMINI_MODEL
+        );
+
+      const selectedModel =
+        isAllowedGeminiModel(requestedModel)
+          ? requestedModel
+          : GEMINI_MODEL;
+
       const instructions =
         "Je bent de persoonlijke assistent van My Life Dashboard. " +
         "Help met planning, school, taken, doelen, Flight Sim en widgets. " +
@@ -947,7 +1004,7 @@ app.post(
         await callGemini(
           instructions,
           question,
-          GEMINI_MODEL,
+          selectedModel,
           image
         );
 
@@ -991,10 +1048,26 @@ app.post(
         "Widgetverzoek: " +
         prompt;
 
+      const profile =
+        req.body?.aiProfile || {};
+
+      const requestedModel =
+        String(
+          req.body?.model ||
+          profile.model ||
+          GEMINI_MODEL
+        );
+
+      const selectedModel =
+        isAllowedGeminiModel(requestedModel)
+          ? requestedModel
+          : GEMINI_MODEL;
+
       const result =
         await callGemini(
           instructions,
-          ""
+          "",
+          selectedModel
         );
 
       const cleaned =
