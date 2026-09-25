@@ -23,9 +23,9 @@
     if (document.querySelector("#view-integrations")) return;
     const nav=document.querySelector(".sidebar nav");
     if(!nav) return;
-    const b=document.createElement("button");
+    const b=nav.querySelector('[data-view="integrations"]')||document.createElement("button");
     b.className="nav-item"; b.dataset.view="integrations"; b.innerHTML="<span>↻</span>Integraties";
-    nav.appendChild(b); b.onclick=show;
+    if(!b.parentElement)nav.appendChild(b); b.onclick=show;
 
     const v=document.createElement("section");
     v.className="view"; v.id="view-integrations";
