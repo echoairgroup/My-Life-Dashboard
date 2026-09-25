@@ -22,7 +22,7 @@ const SIMBRIEF = process.env.SIMBRIEF_USERNAME || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 
 const ENV_GEMINI_MODEL =
-  process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 const ENV_GEMINI_FALLBACK_MODEL =
   process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite";
@@ -32,25 +32,13 @@ const ENV_GEMINI_FALLBACK_MODEL =
  * These are current Gemini API text/multimodal models.
  */
 const GEMINI_MODELS = {
-  "gemini-3.8-flash": {
-    name: "Gemini 3.8 Flash",
-    description: "Meest intelligente Flash-model voor complexe taken en langere redeneerketens."
-  },
-  "gemini-3.7-flash": {
-    name: "Gemini 3.7 Flash",
-    description: "Sterk voor complexe vragen, coding en multi-step opdrachten."
-  },
-  "gemini-3.5-flash": {
-    name: "Gemini 3.5 Flash",
-    description: "Sterk allround model voor dagelijkse en complexere taken."
-  },
   "gemini-3.5-flash-lite": {
     name: "Gemini 3.5 Flash-Lite",
-    description: "Snel, efficiënt en geschikt voor veel dagelijkse vragen."
+    description: "Snel, stabiel en geschikt voor dagelijkse chat, vision en widgets."
   },
   "gemini-3.1-flash-lite": {
     name: "Gemini 3.1 Flash-Lite",
-    description: "Snelle, efficiënte fallback en lichte assistent."
+    description: "Efficiënte fallback voor hoge belasting en snelle taken."
   }
 };
 
@@ -67,7 +55,7 @@ const isAllowedGeminiModel = model =>
 
 const GEMINI_MODEL = isAllowedGeminiModel(ENV_GEMINI_MODEL)
   ? ENV_GEMINI_MODEL
-  : "gemini-3.8-flash";
+  : "gemini-3.5-flash-lite";
 
 const GEMINI_FALLBACK_MODEL = isAllowedGeminiModel(
   ENV_GEMINI_FALLBACK_MODEL
@@ -76,7 +64,7 @@ const GEMINI_FALLBACK_MODEL = isAllowedGeminiModel(
   : "gemini-3.1-flash-lite";
 
 const AI_BUILD =
-  "backend-hardening-2026-09-24";
+  "stable-flash-lite-home-widgets-2026-09-25";
 
 /* =========================================================
    GEMINI AI
