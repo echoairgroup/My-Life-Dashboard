@@ -10,7 +10,7 @@ function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show"
 function openModal(html){$("#modal").innerHTML=html;$("#modalBackdrop").classList.add("show")}
 function closeModal(){$("#modalBackdrop").classList.remove("show")}
 $("#modalBackdrop").addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
-function switchView(view){$$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+view));$$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));$("#viewTitle").textContent={dashboard:"Dashboard",tasks:"Taken",planning:"Planning",today:"Vandaag",agenda:"Agenda",school:"School",homework:"Huiswerk",flights:"Flight Sim",focus:"Focus",stats:"Statistieken",goals:"Doelen",settings:"Instellingen"}[view]||"Dashboard";if(innerWidth<760)$("#sidebar").classList.remove("open");render();location.hash=view}
+function switchView(view){$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+view));$(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view));$("#viewTitle").textContent={dashboard:"Dashboard",tasks:"Taken",planning:"Planning",today:"Vandaag",agenda:"Agenda",school:"School",homework:"Huiswerk",flights:"Flight Sim",focus:"Focus",stats:"Statistieken",goals:"Doelen",settings:"Instellingen",ai:"AI",["ai-settings"]:"AI Settings"}[view]||"Dashboard";if(innerWidth<760)$("#sidebar").classList.remove("open");render();if(window.renderLifePage)window.renderLifePage(view);location.hash=view}
 $$(".nav-item").forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 $$("[data-goto]").forEach(b=>b.onclick=()=>switchView(b.dataset.goto));
 $("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("open");
