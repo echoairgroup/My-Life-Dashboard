@@ -112,7 +112,7 @@ function ensureSettings(){
   '<label class="ai-toggle"><input id="focusFlights" type="checkbox"><span>✈️ Flight Sim & vluchten</span></label>'+
   '<label class="ai-toggle"><input id="focusGeneral" type="checkbox"><span>💬 Algemene vragen</span></label></article>'+
   '<article class="panel"><div class="panel-head"><div><span class="panel-kicker">MODEL</span><h2>Gemini</h2></div></div>'+
-  '<div class="form-field"><label>Model</label><select id="aiModelSelect" class="ai-model-select"><option value="gemini-3.8-flash">Gemini 3.8 Flash</option><option value="gemini-3.7-flash">Gemini 3.7 Flash</option><option value="gemini-3.5-flash">Gemini 3.5 Flash</option><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option><option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option></select></div>'+
+  '<div class="form-field"><label>Model</label><select id="aiModelSelect" class="ai-model-select"><option value="gemini-3.5-flash-lite">Gemini 3.8 Flash</option><option value="gemini-3.1-flash-lite">Gemini 3.7 Flash</option><option value="gemini-3.5-flash">Gemini 3.5 Flash</option><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option><option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option></select></div>'+
   '<div class="form-field" style="margin-top:12px"><label>API URL</label><input id="aiApiUrl" class="search" placeholder="https://jouw-api.onrender.com"></div>'+
   '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="primary-btn" id="testAIConnection">Test verbinding</button><button class="ghost-btn" id="resetAIConnection">Automatisch vinden</button></div>'+
   '<div id="aiConnectionResult" class="ai-saved"></div></article>'+
@@ -147,7 +147,7 @@ function loadSettings(){
   ensureSettings();
   const p=profile();
   if(q("#aiApiUrl"))q("#aiApiUrl").value=storedApi()||DEFAULTS[0];
-  if(q("#aiModelSelect"))q("#aiModelSelect").value=p.model||"gemini-3.8-flash";
+  if(q("#aiModelSelect"))q("#aiModelSelect").value=p.model||"gemini-3.5-flash-lite";
   if(q("#aiName"))q("#aiName").value=p.name||"";
   if(q("#aiLanguage"))q("#aiLanguage").value=p.language||"Nederlands";
   if(q("#aiCustom"))q("#aiCustom").value=p.custom||"";
@@ -218,7 +218,7 @@ async function send(){
       });
     }
     const p=profile();
-    const d=await api("/api/ai/chat",{message:userText,context:context(),model:p.model||"gemini-3.8-flash",image});
+    const d=await api("/api/ai/chat",{message:userText,context:context(),model:p.model||"gemini-3.5-flash-lite",image});
     const answer=d.text||"Geen antwoord ontvangen.";
     wait.textContent=answer;
     const updated=chatHistory();
