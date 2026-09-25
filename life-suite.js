@@ -82,4 +82,5 @@ document.querySelector("#lifeStore").onclick=function(){go("widget-store")};
 document.querySelector("#newCountdown").onclick=countdownModal;
 function render(){apply();clock();drawWidgets();drawCountdowns();drawStore();applyPersonal()}
 render();
+if(location.hash&&["life","countdowns","widget-store","personalize"].indexOf(location.hash.slice(1))>=0)go(location.hash.slice(1));
 })();
