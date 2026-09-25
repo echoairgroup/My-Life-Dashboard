@@ -1139,6 +1139,8 @@ app.post(
         "Respecteer de ingestelde focusgebieden: " + enabledAreas + ". " +
         "Reageerstijl: " + (toneRules[style] || toneRules.friendly) + " " +
         "Antwoordlengte: " + (lengthRules[profile.length] || lengthRules.medium) + " " +
+        "Taal: " + String(profile.language || "Nederlands") + ". Antwoord uitsluitend in deze taal. " +
+        "Humor: " + String(profile.humor ?? 40) + "%. Proactiviteit: " + String(profile.proactivity ?? 50) + "%. " +
         "Extra gebruikersinstructies: " + String(profile.custom || "geen") + ". " +
         "Naam van de gebruiker: " + String(profile.name || "onbekend") + ". " +
         "Recente conversatie: " + JSON.stringify(conversation) + ". " +
@@ -1188,10 +1190,12 @@ app.post(
         "Ontwerp een veilige zelfstandige HTML-widget voor een persoonlijk dashboard. " +
         "Antwoord uitsluitend met JSON met de velden name, description, html, css en js. " +
         "Geen markdown fences, externe scripts, netwerkrequests of browseracties die data verwijderen. " +
-        "Gebruik window.MyLifeWidgetData voor dashboardgegevens. " +
+        "Gebruik window.MyLifeWidgetData voor dashboardgegevens wanneer dat relevant is. " +
+        "Maak de widget zelfstandig, responsive en visueel verzorgd. " +
         "De HTML, CSS en JS moeten direct in een sandboxed iframe kunnen draaien. " +
-        "Widgetverzoek: " +
-        prompt;
+        "Geen externe scripts, fetch, localStorage, cookies of top-level browseracties. " +
+        "Widgetverzoek: " + prompt + ". " +
+        "Beschikbare dashboardcontext: " + JSON.stringify(req.body?.context || {});
 
       const profile =
         req.body?.aiProfile || {};
@@ -1228,16 +1232,14 @@ app.post(
           .trim();
 
       const widget =
-        JSON.parse(cleaned);
+        validateWidget(
+          extractJsonObject(result.text)
+        );
 
       res.json({
         widget,
-
-        model:
-          result.model,
-
-        provider:
-          "Gemini"
+        model: result.model,
+        provider: "Gemini"
       });
     } catch (error) {
       sendAiError(
