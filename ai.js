@@ -90,6 +90,7 @@ function chatHistory(){try{return JSON.parse(localStorage.getItem(CHAT_KEY)||"[]
 function saveChatHistory(h){localStorage.setItem(CHAT_KEY,JSON.stringify(h.slice(-14)))}
 function dashboardState(){try{return JSON.parse(localStorage.getItem(DASHBOARD_KEY)||"{}")}catch{return{}}}
 function ensureSettings(){
+  if(window.setupAISettings){window.setupAISettings();return;}
   if(q("#view-ai-settings"))return;
   const v=document.createElement("section");
   v.className="view";
@@ -244,7 +245,7 @@ function init(){
     img.onchange=()=>{const f=img.files?.[0];if(q("#aiImageName"))q("#aiImageName").textContent=f?"📎 "+f.name:""};
   }
   const open=q("#openAISettings");
-  if(open&&!open.dataset.aiBound){open.dataset.aiBound="1";open.onclick=()=>{loadSettings();show("ai-settings")}}
+  if(open&&!open.dataset.aiBound){open.dataset.aiBound="1";open.onclick=()=>{if(window.setupAISettings)window.setupAISettings();else loadSettings();show("ai-settings")}}
   const clear=q("#clearAI");
   if(clear&&!clear.dataset.aiBound){
     clear.dataset.aiBound="1";
